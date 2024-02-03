@@ -25,6 +25,8 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
+import loralib as lora
+
 from compressai.datasets import ImageFolder
 from compressai.zoo import models
 
@@ -94,7 +96,7 @@ def configure_optimizers(net, args):
     }
 
     # Make sure we don't have an intersection of parameters
-    params_dict = dict(net.named_parameters())
+    params_dict = dict(((n, p) for n, p in net.named_parameters() if p.requires_grad))
     inter_params = parameters & aux_parameters
     union_params = parameters | aux_parameters
 
@@ -105,11 +107,11 @@ def configure_optimizers(net, args):
         (params_dict[n] for n in sorted(parameters)),
         lr=args.learning_rate,
     )
-    aux_optimizer = optim.Adam(
-        (params_dict[n] for n in sorted(aux_parameters)),
-        lr=args.aux_learning_rate,
-    )
-    return optimizer, aux_optimizer
+    # aux_optimizer = optim.Adam(
+    #     (params_dict[n] for n in sorted(aux_parameters)),
+    #     lr=args.aux_learning_rate,
+    # )
+    return optimizer  # , aux_optimizer
 
 
 def train_one_epoch(
@@ -122,7 +124,7 @@ def train_one_epoch(
         d = d.to(device)
 
         optimizer.zero_grad()
-        aux_optimizer.zero_grad()
+        # aux_optimizer.zero_grad()
 
         out_net = model(d)
 
@@ -132,9 +134,9 @@ def train_one_epoch(
             torch.nn.utils.clip_grad_norm_(model.parameters(), clip_max_norm)
         optimizer.step()
 
-        aux_loss = model.aux_loss()
-        aux_loss.backward()
-        aux_optimizer.step()
+        # aux_loss = model.aux_loss()
+        # aux_loss.backward()
+        # aux_optimizer.step()
 
         if i % 100 == 0:
             print(
@@ -144,7 +146,7 @@ def train_one_epoch(
                 f'\tLoss: {out_criterion["loss"].item():.3f} |'
                 f'\tMSE loss: {out_criterion["mse_loss"].item() * 255 ** 2 / 3:.3f} |'
                 f'\tBpp loss: {out_criterion["bpp_loss"].item():.2f} |'
-                f"\tAux loss: {aux_loss.item():.2f}"
+                # f"\tAux loss: {aux_loss.item():.2f}"
             )
 
 
@@ -155,7 +157,7 @@ def test_epoch(epoch, test_dataloader, model, criterion):
     loss = AverageMeter()
     bpp_loss = AverageMeter()
     mse_loss = AverageMeter()
-    aux_loss = AverageMeter()
+    # aux_loss = AverageMeter()
 
     with torch.no_grad():
         for d in test_dataloader:
@@ -163,7 +165,7 @@ def test_epoch(epoch, test_dataloader, model, criterion):
             out_net = model(d)
             out_criterion = criterion(out_net, d)
 
-            aux_loss.update(model.aux_loss())
+            # aux_loss.update(model.aux_loss())
             bpp_loss.update(out_criterion["bpp_loss"])
             loss.update(out_criterion["loss"])
             mse_loss.update(out_criterion["mse_loss"])
@@ -173,7 +175,7 @@ def test_epoch(epoch, test_dataloader, model, criterion):
         f"\tLoss: {loss.avg:.3f} |"
         f"\tMSE loss: {mse_loss.avg * 255 ** 2 / 3:.3f} |"
         f"\tBpp loss: {bpp_loss.avg:.2f} |"
-        f"\tAux loss: {aux_loss.avg:.2f}\n"
+        # f"\tAux loss: {aux_loss.avg:.2f}\n"
     )
     return loss.avg
 
@@ -187,9 +189,19 @@ def save_checkpoint(state, is_best, filename):
 def parse_args(argv):
     parser = argparse.ArgumentParser(description="Example training script.")
     parser.add_argument(
+        "--start",
+        action=argparse.BooleanOptionalAction,
+    )
+    parser.add_argument(
+        "--lora_r",
+        default=4,
+        type=int,
+        help="Lora Rank (default: %(default)s)",
+    )
+    parser.add_argument(
         "-m",
         "--model",
-        default="stf",
+        default="lora_stf",
         choices=models.keys(),
         help="Model architecture (default: %(default)s)",
     )
@@ -248,13 +260,19 @@ def parse_args(argv):
     )
     parser.add_argument("--cuda", action="store_true", help="Use cuda")
     parser.add_argument(
-        "--save", action="store_true", default=True, help="Save model to disk"
+        "--save", action="store_true", default=True, help="Save model or lora to disk"
     )
     parser.add_argument(
         "--save_path",
         type=str,
         default="ckpt/model.pth.tar",
         help="Where to Save model",
+    )
+    parser.add_argument(
+        "--lora_save_path",
+        type=str,
+        default="ckpt/lora.pth.tar",
+        help="Where to Save lora",
     )
     parser.add_argument(
         "--seed", type=float, help="Set random seed for reproducibility"
@@ -266,6 +284,7 @@ def parse_args(argv):
         help="gradient clipping max norm (default: %(default)s",
     )
     parser.add_argument("--checkpoint", type=str, help="Path to a checkpoint")
+    parser.add_argument("--lora_checkpoint", type=str, help="Path to a lora checkpoint")
     args = parser.parse_args(argv)
     return args
 
@@ -306,13 +325,15 @@ def main(argv):
         pin_memory=(device == "cuda"),
     )
 
-    net = models[args.model]()
+    net = models[args.model](lora_r=args.lora_r)
+    lora.mark_only_lora_as_trainable(net, bias="lora_only")
+
     net = net.to(device)
 
     if args.cuda and torch.cuda.device_count() > 1:
         net = CustomDataParallel(net)
 
-    optimizer, aux_optimizer = configure_optimizers(net, args)
+    optimizer = configure_optimizers(net, args)
     lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, "min", factor=0.3, patience=4
     )
@@ -322,12 +343,21 @@ def main(argv):
     if args.checkpoint:  # load from previous checkpoint
         print("Loading", args.checkpoint)
         checkpoint = torch.load(args.checkpoint, map_location=device)
-        last_epoch = checkpoint["epoch"] + 1
-        net.load_state_dict(checkpoint["state_dict"])
 
-        optimizer.load_state_dict(checkpoint["optimizer"])
-        aux_optimizer.load_state_dict(checkpoint["aux_optimizer"])
-        lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
+        net.load_state_dict(
+            checkpoint["state_dict"],
+            strict=False,
+        )
+
+        if args.lora_checkpoint:
+            checkpoint = torch.load(args.lora_checkpoint, map_location=device)
+            net.load_state_dict(
+                checkpoint["state_dict"],
+                strict=False,
+            )
+            last_epoch = checkpoint["epoch"] + 1
+            optimizer.load_state_dict(checkpoint["optimizer"])
+            lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
 
     best_loss = float("inf")
     for epoch in range(last_epoch, args.epochs):
@@ -337,9 +367,8 @@ def main(argv):
             criterion,
             train_dataloader,
             optimizer,
-            aux_optimizer,
-            epoch,
-            args.clip_max_norm,
+            epoch=epoch,
+            clip_max_norm=args.clip_max_norm,
         )
         loss = test_epoch(epoch, test_dataloader, net, criterion)
         lr_scheduler.step(loss)
@@ -347,19 +376,20 @@ def main(argv):
         is_best = loss < best_loss
         best_loss = min(loss, best_loss)
 
-        if args.save:
-            save_checkpoint(
-                {
-                    "epoch": epoch,
-                    "state_dict": net.state_dict(),
-                    "loss": loss,
-                    "optimizer": optimizer.state_dict(),
-                    "aux_optimizer": aux_optimizer.state_dict(),
-                    "lr_scheduler": lr_scheduler.state_dict(),
-                },
-                is_best,
-                args.save_path,
-            )
+        if not args.save:
+            continue
+
+        save_checkpoint(
+            {
+                "epoch": epoch,
+                "state_dict": lora.lora_state_dict(net),
+                "loss": loss,
+                "optimizer": optimizer.state_dict(),
+                "lr_scheduler": lr_scheduler.state_dict(),
+            },
+            is_best,
+            args.save_path,
+        )
 
 
 if __name__ == "__main__":

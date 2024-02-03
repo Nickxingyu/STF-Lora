@@ -3,13 +3,13 @@ import math
 import torch.nn.functional as F
 import numpy as np
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
-from .utils import conv, update_registered_buffers, deconv
+from .utils import conv, update_registered_buffers, lora_conv
 
 import torch.nn as nn
 import loralib as lora
 from compressai.entropy_models import EntropyBottleneck, GaussianConditional
 from compressai.ans import BufferedRansEncoder, RansDecoder
-from compressai.layers import conv3x3, subpel_conv3x3
+from compressai.layers import conv3x3, subpel_conv3x3, lora_conv3x3, lora_subpel_conv3x3
 from compressai.ops import ste_round
 from .base import CompressionModel
 
@@ -55,7 +55,8 @@ class MlpWithLora(Mlp):
         in_features,
         hidden_features=None,
         out_features=None,
-        r=2,
+        lora_r=0,
+        merge_weights=True,
         **kwargs,
     ):
         super().__init__(
@@ -66,8 +67,18 @@ class MlpWithLora(Mlp):
         )
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
-        self.fc1 = lora.Linear(in_features, hidden_features, r)
-        self.fc2 = lora.Linear(hidden_features, out_features, r)
+        self.fc1 = lora.Linear(
+            in_features,
+            hidden_features,
+            r=lora_r,
+            merge_weights=merge_weights,
+        )
+        self.fc2 = lora.Linear(
+            hidden_features,
+            out_features,
+            r=lora_r,
+            merge_weights=merge_weights,
+        )
 
 
 def window_partition(x, window_size):
@@ -198,7 +209,8 @@ class WindowAttentionWithLora(WindowAttention):
         qk_scale=None,
         attn_drop=0.0,
         proj_drop=0.0,
-        r=2,
+        lora_r=0,
+        merge_weights=True,
         enable_lora=[True, False, True],
     ):
         super().__init__(
@@ -214,11 +226,17 @@ class WindowAttentionWithLora(WindowAttention):
         self.qkv = lora.MergedLinear(
             dim,
             dim * 3,
-            r,
+            r=lora_r,
+            merge_weights=merge_weights,
             enable_lora=enable_lora,
             bias=qkv_bias,
         )
-        self.proj = lora.Linear(dim, dim, r)
+        self.proj = lora.Linear(
+            dim,
+            dim,
+            r=lora_r,
+            merge_weights=merge_weights,
+        )
 
 
 class SwinTransformerBlock(nn.Module):
@@ -347,6 +365,8 @@ class SwinTransformerBlockWithLora(SwinTransformerBlock):
         drop=0.0,
         attn_drop=0.0,
         act_layer=nn.GELU,
+        lora_r=0,
+        merge_weights=True,
         **kwargs,
     ):
         super().__init__(
@@ -369,6 +389,8 @@ class SwinTransformerBlockWithLora(SwinTransformerBlock):
             qk_scale=qk_scale,
             attn_drop=attn_drop,
             proj_drop=drop,
+            lora_r=lora_r,
+            merge_weights=merge_weights,
         )
 
         mlp_hidden_dim = int(dim * mlp_ratio)
@@ -377,6 +399,8 @@ class SwinTransformerBlockWithLora(SwinTransformerBlock):
             hidden_features=mlp_hidden_dim,
             act_layer=act_layer,
             drop=drop,
+            lora_r=lora_r,
+            merge_weights=merge_weights,
         )
 
         self.H = None
@@ -420,7 +444,7 @@ class PatchMerging(nn.Module):
 
 
 class PatchSplit(nn.Module):
-    """Patch Merging Layer
+    """Patch Split Layer
     Args:
         dim (int): Number of input channels.
         norm_layer (nn.Module, optional): Normalization layer.  Default: nn.LayerNorm
@@ -565,6 +589,8 @@ class BasicLayerWithLora(BasicLayer):
         downsample=None,
         use_checkpoint=False,
         inverse=False,
+        lora_r=0,
+        merge_weights=True,
     ):
         super().__init__(
             dim=dim,
@@ -600,6 +626,8 @@ class BasicLayerWithLora(BasicLayer):
                     else drop_path,
                     norm_layer=norm_layer,
                     inverse=inverse,
+                    lora_r=lora_r,
+                    merge_weights=merge_weights,
                 )
                 for i in range(depth)
             ]
@@ -1104,6 +1132,8 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
         patch_norm=True,
         frozen_stages=-1,
         use_checkpoint=False,
+        lora_r=4,
+        merge_weights=True,
     ):
         super().__init__(
             pretrain_img_size=pretrain_img_size,
@@ -1157,6 +1187,8 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
                 downsample=PatchMerging if (i_layer < self.num_layers - 1) else None,
                 use_checkpoint=use_checkpoint,
                 inverse=False,
+                lora_r=lora_r,
+                merge_weights=merge_weights,
             )
             self.layers.append(layer)
 
@@ -1179,12 +1211,227 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
                 downsample=PatchSplit if (i_layer < self.num_layers - 1) else None,
                 use_checkpoint=use_checkpoint,
                 inverse=True,
+                lora_r=lora_r,
+                merge_weights=merge_weights,
             )
             self.syn_layers.append(layer)
 
-    # @classmethod
-    # def from_state_dict(cls, state_dict, strict: bool = True):
-    #     """Return a new model instance from `state_dict`."""
-    #     net = cls()
-    #     net.load_state_dict(state_dict)
-    #     return net
+        # self.end_conv = nn.Sequential(
+        #     lora.Conv2d(
+        #         embed_dim,
+        #         embed_dim * patch_size**2,
+        #         kernel_size=5,
+        #         stride=1,
+        #         padding=2,
+        #         r=lora_r,
+        #         merge_weights=merge_weights,
+        #     ),
+        #     nn.PixelShuffle(patch_size),
+        #     lora.Conv2d(
+        #         embed_dim,
+        #         3,
+        #         kernel_size=3,
+        #         stride=1,
+        #         padding=1,
+        #         r=lora_r,
+        #         merge_weights=merge_weights,
+        #     ),
+        # )
+
+        # num_features = [int(embed_dim * 2**i) for i in range(self.num_layers)]
+        # self.num_features = num_features
+
+        # self.h_a = nn.Sequential(
+        #     lora_conv3x3(384, 384, lora_r=lora_r, merge_weights=merge_weights),
+        #     nn.GELU(),
+        #     lora_conv3x3(384, 336, lora_r=lora_r, merge_weights=merge_weights),
+        #     nn.GELU(),
+        #     lora_conv3x3(
+        #         336, 288, lora_r=lora_r, merge_weights=merge_weights, stride=2
+        #     ),
+        #     nn.GELU(),
+        #     lora_conv3x3(288, 240, lora_r=lora_r, merge_weights=merge_weights),
+        #     nn.GELU(),
+        #     lora_conv3x3(
+        #         240, 192, lora_r=lora_r, merge_weights=merge_weights, stride=2
+        #     ),
+        # )
+
+        # self.h_mean_s = nn.Sequential(
+        #     lora_conv3x3(192, 240, lora_r=lora_r, merge_weights=merge_weights),
+        #     nn.GELU(),
+        #     lora_subpel_conv3x3(
+        #         240, 288, 2, lora_r=lora_r, merge_weights=merge_weights
+        #     ),
+        #     nn.GELU(),
+        #     lora_conv3x3(288, 336, lora_r=lora_r, merge_weights=merge_weights),
+        #     nn.GELU(),
+        #     lora_subpel_conv3x3(
+        #         336, 384, 2, lora_r=lora_r, merge_weights=merge_weights
+        #     ),
+        #     nn.GELU(),
+        #     lora_conv3x3(384, 384, lora_r=lora_r, merge_weights=merge_weights),
+        # )
+        # self.h_scale_s = nn.Sequential(
+        #     lora_conv3x3(192, 240, lora_r=lora_r, merge_weights=merge_weights),
+        #     nn.GELU(),
+        #     lora_subpel_conv3x3(
+        #         240, 288, 2, lora_r=lora_r, merge_weights=merge_weights
+        #     ),
+        #     nn.GELU(),
+        #     lora_conv3x3(288, 336, lora_r=lora_r, merge_weights=merge_weights),
+        #     nn.GELU(),
+        #     lora_subpel_conv3x3(
+        #         336, 384, 2, lora_r=lora_r, merge_weights=merge_weights
+        #     ),
+        #     nn.GELU(),
+        #     lora_conv3x3(384, 384, lora_r=lora_r, merge_weights=merge_weights),
+        # )
+        # self.cc_mean_transforms = nn.ModuleList(
+        #     nn.Sequential(
+        #         lora_conv(
+        #             384 + 32 * min(i, 6),
+        #             224,
+        #             stride=1,
+        #             kernel_size=3,
+        #             lora_r=lora_r,
+        #             merge_weights=merge_weights,
+        #         ),
+        #         nn.GELU(),
+        #         lora_conv(
+        #             224,
+        #             176,
+        #             stride=1,
+        #             kernel_size=3,
+        #             lora_r=lora_r,
+        #             merge_weights=merge_weights,
+        #         ),
+        #         nn.GELU(),
+        #         lora_conv(
+        #             176,
+        #             128,
+        #             stride=1,
+        #             kernel_size=3,
+        #             lora_r=lora_r,
+        #             merge_weights=merge_weights,
+        #         ),
+        #         nn.GELU(),
+        #         lora_conv(
+        #             128,
+        #             64,
+        #             stride=1,
+        #             kernel_size=3,
+        #             lora_r=lora_r,
+        #             merge_weights=merge_weights,
+        #         ),
+        #         nn.GELU(),
+        #         lora_conv(
+        #             64,
+        #             32,
+        #             stride=1,
+        #             kernel_size=3,
+        #             lora_r=lora_r,
+        #             merge_weights=merge_weights,
+        #         ),
+        #     )
+        #     for i in range(num_slices)
+        # )
+        # self.cc_scale_transforms = nn.ModuleList(
+        #     nn.Sequential(
+        #         lora_conv(
+        #             384 + 32 * min(i, 6),
+        #             224,
+        #             stride=1,
+        #             kernel_size=3,
+        #             lora_r=lora_r,
+        #             merge_weights=merge_weights,
+        #         ),
+        #         nn.GELU(),
+        #         lora_conv(
+        #             224,
+        #             176,
+        #             stride=1,
+        #             kernel_size=3,
+        #             lora_r=lora_r,
+        #             merge_weights=merge_weights,
+        #         ),
+        #         nn.GELU(),
+        #         lora_conv(
+        #             176,
+        #             128,
+        #             stride=1,
+        #             kernel_size=3,
+        #             lora_r=lora_r,
+        #             merge_weights=merge_weights,
+        #         ),
+        #         nn.GELU(),
+        #         lora_conv(
+        #             128,
+        #             64,
+        #             stride=1,
+        #             kernel_size=3,
+        #             lora_r=lora_r,
+        #             merge_weights=merge_weights,
+        #         ),
+        #         nn.GELU(),
+        #         lora_conv(
+        #             64,
+        #             32,
+        #             stride=1,
+        #             kernel_size=3,
+        #             lora_r=lora_r,
+        #             merge_weights=merge_weights,
+        #         ),
+        #     )
+        #     for i in range(num_slices)
+        # )
+        # self.lrp_transforms = nn.ModuleList(
+        #     nn.Sequential(
+        #         lora_conv(
+        #             384 + 32 * min(i + 1, 7),
+        #             224,
+        #             stride=1,
+        #             kernel_size=3,
+        #             lora_r=lora_r,
+        #             merge_weights=merge_weights,
+        #         ),
+        #         nn.GELU(),
+        #         lora_conv(
+        #             224,
+        #             176,
+        #             stride=1,
+        #             kernel_size=3,
+        #             lora_r=lora_r,
+        #             merge_weights=merge_weights,
+        #         ),
+        #         nn.GELU(),
+        #         lora_conv(
+        #             176,
+        #             128,
+        #             stride=1,
+        #             kernel_size=3,
+        #             lora_r=lora_r,
+        #             merge_weights=merge_weights,
+        #         ),
+        #         nn.GELU(),
+        #         lora_conv(
+        #             128,
+        #             64,
+        #             stride=1,
+        #             kernel_size=3,
+        #             lora_r=lora_r,
+        #             merge_weights=merge_weights,
+        #         ),
+        #         nn.GELU(),
+        #         lora_conv(
+        #             64,
+        #             32,
+        #             stride=1,
+        #             kernel_size=3,
+        #             lora_r=lora_r,
+        #             merge_weights=merge_weights,
+        #         ),
+        #     )
+        #     for i in range(num_slices)
+        # )
+        # self._freeze_stages()

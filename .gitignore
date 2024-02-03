@@ -130,5 +130,7 @@ dmypy.json
 
 
 data
+dataset
 checkpoint
+ckpt
 reconstruction

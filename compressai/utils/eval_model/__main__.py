@@ -28,6 +28,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+import loralib as lora
+
 from PIL import Image
 from pytorch_msssim import ms_ssim
 from torchvision import transforms
@@ -265,6 +267,17 @@ def main(argv):
 
         model.update(force=True)
 
+        print("=" * 100)
+        lora.mark_only_lora_as_trainable(model)
+        # trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+        # ori_params = (
+        #     sum(param.numel() for param in model.parameters()) - trainable_params
+        # )
+        # print(ori_params, trainable_params, sep="\n")
+        # for n in lora.lora_state_dict(model).keys():
+        #     print(n)
+
+        exit()
         metrics = eval_model(
             model,
             filepaths,

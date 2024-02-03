@@ -13,15 +13,18 @@
 # limitations under the License.
 
 
-
 import torch
 import torch.nn as nn
+import loralib as lora
 from .win_attention import WinBasedAttention
 
 __all__ = [
     "conv3x3",
     "subpel_conv3x3",
     "conv1x1",
+    "lora_conv3x3",
+    "lora_subpel_conv3x3",
+    "lora_conv1x1",
     "Win_noShift_Attention",
 ]
 
@@ -34,13 +37,60 @@ def conv3x3(in_ch: int, out_ch: int, stride: int = 1) -> nn.Module:
 def subpel_conv3x3(in_ch: int, out_ch: int, r: int = 1) -> nn.Sequential:
     """3x3 sub-pixel convolution for up-sampling."""
     return nn.Sequential(
-        nn.Conv2d(in_ch, out_ch * r ** 2, kernel_size=3, padding=1), nn.PixelShuffle(r)
+        nn.Conv2d(in_ch, out_ch * r**2, kernel_size=3, padding=1), nn.PixelShuffle(r)
     )
 
 
 def conv1x1(in_ch: int, out_ch: int, stride: int = 1) -> nn.Module:
     """1x1 convolution."""
     return nn.Conv2d(in_ch, out_ch, kernel_size=1, stride=stride)
+
+
+def lora_conv1x1(
+    in_ch: int, out_ch: int, stride: int = 1, lora_r: int = 0, merge_weights=True
+) -> nn.Module:
+    """1x1 convolution."""
+    return lora.Conv2d(
+        in_ch,
+        out_ch,
+        kernel_size=1,
+        stride=stride,
+        r=lora_r,
+        merge_weights=merge_weights,
+    )
+
+
+def lora_conv3x3(
+    in_ch: int, out_ch: int, stride: int = 1, lora_r: int = 0, merge_weights=True
+) -> nn.Module:
+    """3x3 convolution with padding."""
+    return lora.Conv2d(
+        in_ch,
+        out_ch,
+        kernel_size=3,
+        stride=stride,
+        padding=1,
+        r=lora_r,
+        merge_weights=merge_weights,
+    )
+
+
+def lora_subpel_conv3x3(
+    in_ch: int, out_ch: int, r: int = 1, lora_r: int = 0, merge_weights=True
+) -> nn.Sequential:
+    """3x3 sub-pixel convolution for up-sampling."""
+    return nn.Sequential(
+        lora.Conv2d(
+            in_ch,
+            out_ch * r**2,
+            kernel_size=3,
+            padding=1,
+            r=lora_r,
+            merge_weights=merge_weights,
+        ),
+        nn.PixelShuffle(r),
+    )
+
 
 class Win_noShift_Attention(nn.Module):
     """Window-based self-attention module."""
@@ -73,7 +123,12 @@ class Win_noShift_Attention(nn.Module):
         self.conv_a = nn.Sequential(ResidualUnit(), ResidualUnit(), ResidualUnit())
 
         self.conv_b = nn.Sequential(
-            WinBasedAttention(dim=dim, num_heads=num_heads, window_size=window_size, shift_size=shift_size),
+            WinBasedAttention(
+                dim=dim,
+                num_heads=num_heads,
+                window_size=window_size,
+                shift_size=shift_size,
+            ),
             ResidualUnit(),
             ResidualUnit(),
             ResidualUnit(),
@@ -87,4 +142,3 @@ class Win_noShift_Attention(nn.Module):
         out = a * torch.sigmoid(b)
         out += identity
         return out
-

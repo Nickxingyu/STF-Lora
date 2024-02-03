@@ -14,6 +14,7 @@
 
 import torch
 import torch.nn as nn
+import loralib as lora
 
 
 def find_named_module(module, query):
@@ -104,7 +105,7 @@ def update_registered_buffers(
         _update_registered_buffer(
             module,
             buffer_name,
-            f"{module_name}.{buffer_name}",     # 修改了
+            f"module.{module_name}.{buffer_name}",  # 修改了
             state_dict,
             policy,
             dtype,
@@ -121,7 +122,21 @@ def conv(in_channels, out_channels, kernel_size=5, stride=2):
     )
 
 
-def deconv(in_channels, out_channels, kernel_size=5, stride=2):     # SN -1 + k - 2p
+def lora_conv(
+    in_channels, out_channels, kernel_size=5, stride=2, lora_r=0, merge_weights=True
+):
+    return lora.Conv2d(
+        in_channels,
+        out_channels,
+        kernel_size=kernel_size,
+        stride=stride,
+        padding=kernel_size // 2,
+        r=lora_r,
+        merge_weights=merge_weights,
+    )
+
+
+def deconv(in_channels, out_channels, kernel_size=5, stride=2):  # SN -1 + k - 2p
     return nn.ConvTranspose2d(
         in_channels,
         out_channels,
