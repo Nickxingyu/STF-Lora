@@ -153,12 +153,13 @@ def load_checkpoint(arch: str, checkpoint_path: str, strict=True) -> nn.Module:
     state_dict = load_state_dict(
         torch.load(checkpoint_path, map_location=torch.device("cpu"))["state_dict"]
     )
-    return models[arch].from_state_dict(state_dict, strict).eval()
+    return models[arch].from_state_dict(state_dict, strict)
 
 
 def eval_model(
     model, filepaths, entropy_estimation=False, half=False, recon_path="reconstruction"
 ):
+    model.eval()
     device = next(model.parameters()).device
     metrics = defaultdict(float)
     for f in filepaths:
@@ -267,17 +268,6 @@ def main(argv):
 
         model.update(force=True)
 
-        print("=" * 100)
-        lora.mark_only_lora_as_trainable(model)
-        # trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-        # ori_params = (
-        #     sum(param.numel() for param in model.parameters()) - trainable_params
-        # )
-        # print(ori_params, trainable_params, sep="\n")
-        # for n in lora.lora_state_dict(model).keys():
-        #     print(n)
-
-        exit()
         metrics = eval_model(
             model,
             filepaths,

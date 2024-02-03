@@ -47,7 +47,7 @@ def find_named_buffer(module, query):
 def _update_registered_buffer(
     module,
     buffer_name,
-    state_dict_key,
+    state_dict_key: str,
     state_dict,
     policy="resize_if_empty",
     dtype=torch.int,
@@ -105,7 +105,7 @@ def update_registered_buffers(
         _update_registered_buffer(
             module,
             buffer_name,
-            f"module.{module_name}.{buffer_name}",  # 修改了
+            f"{module_name}.{buffer_name}",  # 修改了
             state_dict,
             policy,
             dtype,
