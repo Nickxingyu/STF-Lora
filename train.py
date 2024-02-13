@@ -137,9 +137,11 @@ def train_one_epoch(
     avg_bpp_loss = AverageMeter()
     avg_aux_loss = AverageMeter()
 
+    steps_to_show = 1000
+
     for i, d in enumerate(train_dataloader):
-        if i % 100 == 0:
-            bar = tqdm(total=100)
+        if i % steps_to_show == 0:
+            bar = tqdm(total=steps_to_show)
 
         d = d.to(device)
 
@@ -163,12 +165,12 @@ def train_one_epoch(
         avg_bpp_loss.update(out_criterion["bpp_loss"])
         avg_aux_loss.update(aux_loss)
 
-        if i % 1000 == 999:
+        if i % steps_to_show == steps_to_show - 1:
             bar.close()
             print(
                 f"Train epoch {epoch}: ["
                 f"{(i+1)*len(d)}/{len(train_dataloader.dataset)}"
-                f" ({1000. * (i+1) / len(train_dataloader):.0f}%)]"
+                f" ({steps_to_show * (i+1) / len(train_dataloader):.0f}%)]"
                 f"\tLoss: {avg_loss.avg:.3f} |"
                 f"\tMSE loss: {avg_mse_loss.avg * 255 ** 2 / 3:.3f} |"
                 f"\tBpp loss: {avg_bpp_loss.avg:.2f} |"
