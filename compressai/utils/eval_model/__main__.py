@@ -278,11 +278,10 @@ def main(argv):
         if args.cuda and torch.cuda.is_available():
             model = model.to("cuda")
 
-        lora_state = torch.load(run)
-        model.load_lora_state(lora_state)
-
-        for n, p in model.named_parameters():
+        lora_state = torch.load(run)["state_dict"]
+        for n in lora_state.keys():
             print(n)
+        model.load_lora_state(lora_state)
 
         model.update(force=True)
 
