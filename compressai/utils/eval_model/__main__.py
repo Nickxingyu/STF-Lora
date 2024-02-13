@@ -275,13 +275,14 @@ def main(argv):
             sys.stderr.flush()
 
         model = load_checkpoint(args.architecture, args.pretrain_path, False)
-        if args.cuda and torch.cuda.is_available():
-            model = model.to("cuda")
 
-        lora_state = torch.load(run)["state_dict"].to("cuda")
+        lora_state = torch.load(run)["state_dict"]
         for n in lora_state.keys():
             print(n)
         model.load_lora_state(lora_state)
+
+        if args.cuda and torch.cuda.is_available():
+            model = model.to("cuda")
 
         model.update(force=True)
 
