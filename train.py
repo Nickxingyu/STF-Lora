@@ -132,6 +132,10 @@ def train_one_epoch(
 ):
     model.train()
     device = next(model.parameters()).device
+    avg_loss = AverageMeter()
+    avg_mse_loss = AverageMeter()
+    avg_bpp_loss = AverageMeter()
+    avg_aux_loss = AverageMeter()
 
     for i, d in enumerate(train_dataloader):
         if i % 100 == 0:
@@ -153,17 +157,27 @@ def train_one_epoch(
         aux_loss.backward()
         aux_optimizer.step()
         bar.update(1)
+
+        avg_loss.update(out_criterion["loss"])
+        avg_mse_loss.update(out_criterion["mse_loss"])
+        avg_bpp_loss.update(out_criterion["bpp_loss"])
+        avg_aux_loss.update(aux_loss)
+
         if i % 100 == 99:
             bar.close()
             print(
                 f"Train epoch {epoch}: ["
                 f"{(i+1)*len(d)}/{len(train_dataloader.dataset)}"
                 f" ({100. * (i+1) / len(train_dataloader):.0f}%)]"
-                f'\tLoss: {out_criterion["loss"].item():.3f} |'
-                f'\tMSE loss: {out_criterion["mse_loss"].item() * 255 ** 2 / 3:.3f} |'
-                f'\tBpp loss: {out_criterion["bpp_loss"].item():.2f} |'
-                f"\tAux loss: {aux_loss.item():.2f}"
+                f"\tLoss: {avg_loss.avg:.3f} |"
+                f"\tMSE loss: {avg_mse_loss.avg * 255 ** 2 / 3:.3f} |"
+                f"\tBpp loss: {avg_bpp_loss.avg:.2f} |"
+                f"\tAux loss: {avg_aux_loss.avg:.2f}"
             )
+            aux_loss.__init__()
+            avg_mse_loss.__init__()
+            avg_bpp_loss.__init__()
+            avg_aux_loss.__init__()
 
 
 def test_epoch(epoch, test_dataloader, model, criterion):
