@@ -132,8 +132,8 @@ def train_one_epoch(
     model.train()
     device = next(model.parameters()).device
 
+    start_time = time.time()
     for i, d in enumerate(train_dataloader):
-        start_time = time.time()
         d = d.to(device)
 
         optimizer.zero_grad()
