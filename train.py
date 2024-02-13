@@ -330,9 +330,11 @@ def parse_args(argv):
     return args
 
 
-def load_checkpoint(arch: str, checkpoint_path: str, strict=True) -> nn.Module:
+def load_checkpoint(
+    arch: str, checkpoint_path: str, strict=True, device="cpu"
+) -> nn.Module:
     state_dict = load_state_dict(
-        torch.load(checkpoint_path, map_location=torch.device("cpu"))["state_dict"]
+        torch.load(checkpoint_path, map_location=torch.device(device))["state_dict"]
     )
     return models[arch].from_state_dict(state_dict, strict)
 
@@ -373,7 +375,7 @@ def main(argv):
         pin_memory=(device == "cuda"),
     )
 
-    net = load_checkpoint(args.model, args.pretrain_ckpt, strict=False)
+    net = load_checkpoint(args.model, args.pretrain_ckpt, strict=False, device=device)
 
     lora.mark_only_lora_as_trainable(net)
     for n, p in net.named_parameters():
