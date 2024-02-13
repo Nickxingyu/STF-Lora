@@ -133,6 +133,7 @@ def train_one_epoch(
     device = next(model.parameters()).device
 
     for i, d in enumerate(train_dataloader):
+        start_time = time.time()
         d = d.to(device)
 
         optimizer.zero_grad()
@@ -150,7 +151,7 @@ def train_one_epoch(
         aux_optimizer.step()
 
         if i % 100 == 0:
-            print(f"Time: {time.time():.2f}")
+            print(f"Time: {time.time()-start_time:.2f}")
             print(
                 f"Train epoch {epoch}: ["
                 f"{i*len(d)}/{len(train_dataloader.dataset)}"
@@ -160,6 +161,7 @@ def train_one_epoch(
                 f'\tBpp loss: {out_criterion["bpp_loss"].item():.2f} |'
                 f"\tAux loss: {aux_loss.item():.2f}"
             )
+            start_time = time.time()
 
 
 def test_epoch(epoch, test_dataloader, model, criterion):
