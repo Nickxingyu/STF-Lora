@@ -1134,6 +1134,7 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
         frozen_stages=-1,
         use_checkpoint=False,
         lora_r=8,
+        hyper_lora_r=16,
         merge_weights=True,
     ):
         super().__init__(
@@ -1243,50 +1244,50 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
         self.num_features = num_features
 
         self.h_a = nn.Sequential(
-            lora_conv3x3(384, 384, lora_r=lora_r, merge_weights=merge_weights),
+            lora_conv3x3(384, 384, lora_r=hyper_lora_r, merge_weights=merge_weights),
             nn.GELU(),
-            lora_conv3x3(384, 336, lora_r=lora_r, merge_weights=merge_weights),
+            lora_conv3x3(384, 336, lora_r=hyper_lora_r, merge_weights=merge_weights),
             nn.GELU(),
             lora_conv3x3(
-                336, 288, lora_r=lora_r, merge_weights=merge_weights, stride=2
+                336, 288, lora_r=hyper_lora_r, merge_weights=merge_weights, stride=2
             ),
             nn.GELU(),
-            lora_conv3x3(288, 240, lora_r=lora_r, merge_weights=merge_weights),
+            lora_conv3x3(288, 240, lora_r=hyper_lora_r, merge_weights=merge_weights),
             nn.GELU(),
             lora_conv3x3(
-                240, 192, lora_r=lora_r, merge_weights=merge_weights, stride=2
+                240, 192, lora_r=hyper_lora_r, merge_weights=merge_weights, stride=2
             ),
         )
 
         self.h_mean_s = nn.Sequential(
-            lora_conv3x3(192, 240, lora_r=lora_r, merge_weights=merge_weights),
+            lora_conv3x3(192, 240, lora_r=hyper_lora_r, merge_weights=merge_weights),
             nn.GELU(),
             lora_subpel_conv3x3(
-                240, 288, 2, lora_r=lora_r, merge_weights=merge_weights
+                240, 288, 2, lora_r=hyper_lora_r, merge_weights=merge_weights
             ),
             nn.GELU(),
-            lora_conv3x3(288, 336, lora_r=lora_r, merge_weights=merge_weights),
+            lora_conv3x3(288, 336, lora_r=hyper_lora_r, merge_weights=merge_weights),
             nn.GELU(),
             lora_subpel_conv3x3(
-                336, 384, 2, lora_r=lora_r, merge_weights=merge_weights
+                336, 384, 2, lora_r=hyper_lora_r, merge_weights=merge_weights
             ),
             nn.GELU(),
-            lora_conv3x3(384, 384, lora_r=lora_r, merge_weights=merge_weights),
+            lora_conv3x3(384, 384, lora_r=hyper_lora_r, merge_weights=merge_weights),
         )
         self.h_scale_s = nn.Sequential(
-            lora_conv3x3(192, 240, lora_r=lora_r, merge_weights=merge_weights),
+            lora_conv3x3(192, 240, lora_r=hyper_lora_r, merge_weights=merge_weights),
             nn.GELU(),
             lora_subpel_conv3x3(
-                240, 288, 2, lora_r=lora_r, merge_weights=merge_weights
+                240, 288, 2, lora_r=hyper_lora_r, merge_weights=merge_weights
             ),
             nn.GELU(),
-            lora_conv3x3(288, 336, lora_r=lora_r, merge_weights=merge_weights),
+            lora_conv3x3(288, 336, lora_r=hyper_lora_r, merge_weights=merge_weights),
             nn.GELU(),
             lora_subpel_conv3x3(
-                336, 384, 2, lora_r=lora_r, merge_weights=merge_weights
+                336, 384, 2, lora_r=hyper_lora_r, merge_weights=merge_weights
             ),
             nn.GELU(),
-            lora_conv3x3(384, 384, lora_r=lora_r, merge_weights=merge_weights),
+            lora_conv3x3(384, 384, lora_r=hyper_lora_r, merge_weights=merge_weights),
         )
         self.cc_mean_transforms = nn.ModuleList(
             nn.Sequential(
@@ -1295,7 +1296,7 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
                     224,
                     stride=1,
                     kernel_size=3,
-                    lora_r=lora_r,
+                    lora_r=hyper_lora_r,
                     merge_weights=merge_weights,
                 ),
                 nn.GELU(),
@@ -1304,7 +1305,7 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
                     176,
                     stride=1,
                     kernel_size=3,
-                    lora_r=lora_r,
+                    lora_r=hyper_lora_r,
                     merge_weights=merge_weights,
                 ),
                 nn.GELU(),
@@ -1313,7 +1314,7 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
                     128,
                     stride=1,
                     kernel_size=3,
-                    lora_r=lora_r,
+                    lora_r=hyper_lora_r,
                     merge_weights=merge_weights,
                 ),
                 nn.GELU(),
@@ -1322,7 +1323,7 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
                     64,
                     stride=1,
                     kernel_size=3,
-                    lora_r=lora_r,
+                    lora_r=hyper_lora_r,
                     merge_weights=merge_weights,
                 ),
                 nn.GELU(),
@@ -1331,7 +1332,7 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
                     32,
                     stride=1,
                     kernel_size=3,
-                    lora_r=lora_r,
+                    lora_r=hyper_lora_r,
                     merge_weights=merge_weights,
                 ),
             )
@@ -1344,7 +1345,7 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
                     224,
                     stride=1,
                     kernel_size=3,
-                    lora_r=lora_r,
+                    lora_r=hyper_lora_r,
                     merge_weights=merge_weights,
                 ),
                 nn.GELU(),
@@ -1353,7 +1354,7 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
                     176,
                     stride=1,
                     kernel_size=3,
-                    lora_r=lora_r,
+                    lora_r=hyper_lora_r,
                     merge_weights=merge_weights,
                 ),
                 nn.GELU(),
@@ -1362,7 +1363,7 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
                     128,
                     stride=1,
                     kernel_size=3,
-                    lora_r=lora_r,
+                    lora_r=hyper_lora_r,
                     merge_weights=merge_weights,
                 ),
                 nn.GELU(),
@@ -1371,7 +1372,7 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
                     64,
                     stride=1,
                     kernel_size=3,
-                    lora_r=lora_r,
+                    lora_r=hyper_lora_r,
                     merge_weights=merge_weights,
                 ),
                 nn.GELU(),
@@ -1380,7 +1381,7 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
                     32,
                     stride=1,
                     kernel_size=3,
-                    lora_r=lora_r,
+                    lora_r=hyper_lora_r,
                     merge_weights=merge_weights,
                 ),
             )
@@ -1393,7 +1394,7 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
                     224,
                     stride=1,
                     kernel_size=3,
-                    lora_r=lora_r,
+                    lora_r=hyper_lora_r,
                     merge_weights=merge_weights,
                 ),
                 nn.GELU(),
@@ -1402,7 +1403,7 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
                     176,
                     stride=1,
                     kernel_size=3,
-                    lora_r=lora_r,
+                    lora_r=hyper_lora_r,
                     merge_weights=merge_weights,
                 ),
                 nn.GELU(),
@@ -1411,7 +1412,7 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
                     128,
                     stride=1,
                     kernel_size=3,
-                    lora_r=lora_r,
+                    lora_r=hyper_lora_r,
                     merge_weights=merge_weights,
                 ),
                 nn.GELU(),
@@ -1420,7 +1421,7 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
                     64,
                     stride=1,
                     kernel_size=3,
-                    lora_r=lora_r,
+                    lora_r=hyper_lora_r,
                     merge_weights=merge_weights,
                 ),
                 nn.GELU(),
@@ -1429,7 +1430,7 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
                     32,
                     stride=1,
                     kernel_size=3,
-                    lora_r=lora_r,
+                    lora_r=hyper_lora_r,
                     merge_weights=merge_weights,
                 ),
             )

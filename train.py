@@ -170,7 +170,7 @@ def train_one_epoch(
             print(
                 f"Train epoch {epoch}: ["
                 f"{(i+1)*len(d)}/{len(train_dataloader.dataset)}"
-                f" ({steps_to_show * (i+1) / len(train_dataloader):.0f}%)]"
+                f" ({100. * (i+1) / len(train_dataloader):.0f}%)]"
                 f"\tLoss: {avg_loss.avg:.3f} |"
                 f"\tMSE loss: {avg_mse_loss.avg * 255 ** 2 / 3:.3f} |"
                 f"\tBpp loss: {avg_bpp_loss.avg:.2f} |"
