@@ -1133,8 +1133,8 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
         patch_norm=True,
         frozen_stages=-1,
         use_checkpoint=False,
-        lora_r=2,
-        hyper_lora_r=8,
+        lora_r=8,
+        hyper_lora_r=16,
         merge_weights=True,
     ):
         super().__init__(
