@@ -21,6 +21,7 @@ import os
 import shutil
 import sys
 import time
+from tqdm.rich import tqdm
 
 from collections import defaultdict
 from typing import List
@@ -164,7 +165,7 @@ def eval_model(
     device = next(model.parameters()).device
     metrics = defaultdict(float)
     cnt = 1
-    for f in filepaths:
+    for f in tqdm(filepaths):
         print(f"{cnt}: {f}")
         cnt += 1
         _filename = f.split("/")[-1]
@@ -277,8 +278,6 @@ def main(argv):
         model = load_checkpoint(args.architecture, args.pretrain_path, False)
 
         lora_state = torch.load(run)["state_dict"]
-        for n in lora_state.keys():
-            print(n)
         model.load_lora_state(lora_state)
 
         if args.cuda and torch.cuda.is_available():

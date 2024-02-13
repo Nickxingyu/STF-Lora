@@ -1,151 +1,71 @@
 {
-    "6->4":{
-        "name": "lora_stf",
-        "description": "Inference (ans)",
-        "results": {
-          "psnr": [
-            35.577601227100736
-          ],
-          "ms-ssim": [
-            0.9855183859666189
-          ],
-          "bpp": [
-            0.7066684299045138
-          ],
-          "encoding_time": [
-            3.078550398349762
-          ],
-          "decoding_time": [
-            3.3756793638070426
-          ]
+    "6->5":{
+        "0":{
+            "name": "lora_stf",
+            "description": "Inference (ans)",
+            "results": {
+                "psnr": [
+                    37.48021537462396
+                ],
+                "ms-ssim": [
+                    0.9896571238835653
+                ],
+                "bpp": [
+                    0.8722805447048612
+                ],
+                "encoding_time": [
+                    0.3893402616182963
+                ],
+                "decoding_time": [
+                    0.6094682117303213
+                ]
+            }
         }
-      },
-      "6->5:0":{
-        "name": "lora_stf",
-        "description": "Inference (ans)",
-        "results": {
-          "psnr": [
-            36.998584475856056
-          ],
-          "ms-ssim": [
-            0.9886662662029266
-          ],
-          "bpp": [
-            0.8220689561631943
-          ],
-          "encoding_time": [
-            3.0086021522680917
-          ],
-          "decoding_time": [
-            3.379045863946279
-          ]
+    },
+    "6->3":{
+        "0":{
+            "name": "lora_stf",
+            "description": "Inference (ans)",
+            "results": {
+                "psnr": [
+                    36.73615933669682
+                ],
+                "ms-ssim": [
+                    0.9881298343340555
+                ],
+                "bpp": [
+                    0.7976752387152778
+                ],
+                "encoding_time": [
+                    0.48534366488456726
+                ],
+                "decoding_time": [
+                    0.6227836608886719
+                ]
+            }
         }
-      },
-      "6->5:1":{
-        "name": "lora_stf",
-        "description": "Inference (ans)",
-        "results": {
-          "psnr": [
-            35.81359992920401
-          ],
-          "ms-ssim": [
-            0.9858100165923437
-          ],
-          "bpp": [
-            0.679775661892361
-          ],
-          "encoding_time": [
-            2.527723173300425
-          ],
-          "decoding_time": [
-            2.8279836773872375
-          ]
+    },
+    "6->2":{
+        "0":{
+            "name": "lora_stf",
+            "description": "Inference (ans)",
+            "results": {
+                "psnr": [
+                    36.72134199652101
+                ],
+                "ms-ssim": [
+                    0.988144131998221
+                ],
+                "bpp": [
+                    0.8034328884548612
+                ],
+                "encoding_time": [
+                    0.4011123776435852
+                ],
+                "decoding_time": [
+                    0.6335388620694479
+                ]
+            }
         }
-      },
-      "6->5:2":{
-        "name": "lora_stf",
-        "description": "Inference (ans)",
-        "results": {
-          "psnr": [
-            35.27509667755854
-          ],
-          "ms-ssim": [
-            0.9841200659672419
-          ],
-          "bpp": [
-            0.6166381835937501
-          ],
-          "encoding_time": [
-            2.524644523859024
-          ],
-          "decoding_time": [
-            2.8384903271993003
-          ]
-        }
-      },
-      "6->5:3":{
-        "psnr":34.48,
-        "bpp": 0.548,
-        "name": "lora_stf",
-        "description": "Inference (ans)",
-        "results": {
-          "psnr": [
-            34.48858559078737
-          ],
-          "ms-ssim": [
-            0.9816106036305428
-          ],
-          "bpp": [
-            0.5486246744791666
-          ],
-          "encoding_time": [
-            2.503236413002014
-          ],
-          "decoding_time": [
-            2.8300056556860604
-          ]
-        }
-      },
-      "6->5:4":{
-        "name": "lora_stf",
-        "description": "Inference (ans)",
-        "results": {
-          "psnr": [
-            35.270548452384254
-          ],
-          "ms-ssim": [
-            0.9841966132322947
-          ],
-          "bpp": [
-            0.6169230143229166
-          ],
-          "encoding_time": [
-            2.4915736814339957
-          ],
-          "decoding_time": [
-            2.8223338027795157
-          ]
-        }
-      },
-      "6->5:5":{
-        "name": "lora_stf",
-        "description": "Inference (ans)",
-        "results": {
-          "psnr": [
-            35.91889448031817
-          ],
-          "ms-ssim": [
-            0.985901320974032
-          ],
-          "bpp": [
-            0.6798875596788193
-          ],
-          "encoding_time": [
-            2.4435036182403564
-          ],
-          "decoding_time": [
-            2.7500572303930917
-          ]
-        }
-      }
+    }
 }
