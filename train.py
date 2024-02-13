@@ -17,6 +17,7 @@ import math
 import random
 import shutil
 import sys
+import time
 
 import torch
 import torch.nn as nn
@@ -149,6 +150,7 @@ def train_one_epoch(
         aux_optimizer.step()
 
         if i % 100 == 0:
+            print(f"Time: {time.time():.2f}")
             print(
                 f"Train epoch {epoch}: ["
                 f"{i*len(d)}/{len(train_dataloader.dataset)}"
