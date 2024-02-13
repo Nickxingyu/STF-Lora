@@ -382,6 +382,10 @@ def main(argv):
         if n.endswith(".quantiles"):
             p.requires_grad = True
 
+    net = net.to(device)
+    if args.cuda and torch.cuda.device_count() > 1:
+        net = CustomDataParallel(net)
+
     optimizer, aux_optimizer = configure_optimizers(net, args)
     lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, "min", factor=0.3, patience=4
@@ -401,11 +405,6 @@ def main(argv):
         optimizer.load_state_dict(lora_checkpoint["optimizer"])
         lr_scheduler.load_state_dict(lora_checkpoint["lr_scheduler"])
         aux_optimizer.load_state_dict(lora_checkpoint["aux_optimizer"])
-
-    net = net.to(device)
-
-    if args.cuda and torch.cuda.device_count() > 1:
-        net = CustomDataParallel(net)
 
     best_loss = float("inf")
     for epoch in range(last_epoch, args.epochs):
