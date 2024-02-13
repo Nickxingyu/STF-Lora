@@ -18,6 +18,7 @@ import random
 import shutil
 import sys
 import time
+from tqdm.rich import tqdm
 
 import torch
 import torch.nn as nn
@@ -132,8 +133,10 @@ def train_one_epoch(
     model.train()
     device = next(model.parameters()).device
 
-    start_time = time.time()
     for i, d in enumerate(train_dataloader):
+        if i % 100 == 0:
+            bar = tqdm(total=100)
+
         d = d.to(device)
 
         optimizer.zero_grad()
@@ -149,9 +152,9 @@ def train_one_epoch(
         aux_loss = model.aux_loss()
         aux_loss.backward()
         aux_optimizer.step()
-
+        bar.update(1)
         if i % 100 == 0:
-            print(f"Time: {time.time()-start_time:.2f}")
+            bar.close()
             print(
                 f"Train epoch {epoch}: ["
                 f"{i*len(d)}/{len(train_dataloader.dataset)}"
@@ -174,7 +177,7 @@ def test_epoch(epoch, test_dataloader, model, criterion):
     aux_loss = AverageMeter()
 
     with torch.no_grad():
-        for d in test_dataloader:
+        for d in tqdm(test_dataloader):
             d = d.to(device)
             out_net = model(d)
             out_criterion = criterion(out_net, d)
@@ -195,9 +198,11 @@ def test_epoch(epoch, test_dataloader, model, criterion):
 
 
 def save_checkpoint(state, is_best, filename, tag: str = ""):
-    torch.save(state, filename[:-8] + (f"_{tag}" if tag != "" else tag) + filename[-8:])
+    tag_filename = filename[:-8] + (f"_{tag}" if tag != "" else tag) + filename[-8:]
+    best_filename = filename[:-8] + "_best" + filename[-8:]
+    torch.save(state, tag_filename)
     if is_best:
-        shutil.copyfile(filename, filename[:-8] + "_best" + filename[-8:])
+        shutil.copyfile(tag_filename, best_filename)
 
 
 def parse_args(argv):
