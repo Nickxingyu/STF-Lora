@@ -7,17 +7,94 @@
                 "psnr": [
                     37.48021537462396
                 ],
-                "ms-ssim": [
-                    0.9896571238835653
-                ],
                 "bpp": [
                     0.8722805447048612
+                ]
+            }
+        },
+        "1":{
+            "name": "lora_stf",
+            "description": "Inference (ans)",
+            "results": {
+                "psnr": [
+                    37.35926451197157
                 ],
-                "encoding_time": [
-                    0.3893402616182963
+                "bpp": [
+                    0.8547261555989581
+                ]
+            }
+        },
+        "2":{
+            "name": "lora_stf",
+            "description": "Inference (ans)",
+            "results": {
+                "psnr": [
+                    36.94588901710076
                 ],
-                "decoding_time": [
-                    0.6094682117303213
+                "bpp": [
+                    0.7994689941406249
+                ]
+            }
+        }
+    },
+    "6->4":{
+        "0":{
+            "name": "lora_stf",
+            "description": "Inference (ans)",
+            "results": {
+                "psnr": [
+                    37.077654717809914
+                ],
+                "bpp": [
+                    0.8270331488715277
+                ]
+            }
+        },
+        "1":{
+            "name": "lora_stf",
+            "description": "Inference (ans)",
+            "results": {
+                "psnr": [
+                    36.84005418987334
+                ],
+                "bpp": [
+                    0.7954203287760416
+                ]
+            }
+        },
+        "2":{
+            "name": "lora_stf",
+            "description": "Inference (ans)",
+            "results": {
+                "psnr": [
+                    36.63105953324189
+                ],
+                "bpp": [
+                    0.7665947808159723
+                ]
+            }
+        },
+        "3":{
+            "name": "lora_stf",
+            "description": "Inference (ans)",
+            "results": {
+                "psnr": [
+                    35.956931465294645
+                ],
+                "bpp": [
+                    0.6891716851128472
+                ]
+            }
+        },
+        "4":{
+            "name": "lora_stf",
+            "description": "Inference (ans)",
+            "results": {
+                "psnr": [
+                    34.81037438146284
+                ],
+                "bpp": [
+                    0.5613878038194445
                 ]
             }
         }
@@ -30,17 +107,20 @@
                 "psnr": [
                     36.73615933669682
                 ],
-                "ms-ssim": [
-                    0.9881298343340555
-                ],
                 "bpp": [
                     0.7976752387152778
+                ]
+            }
+        },
+        "1":{
+            "name": "lora_stf",
+            "description": "Inference (ans)",
+            "results": {
+                "psnr": [
+                    36.44485758369817
                 ],
-                "encoding_time": [
-                    0.48534366488456726
-                ],
-                "decoding_time": [
-                    0.6227836608886719
+                "bpp": [
+                    0.7602505154079863
                 ]
             }
         }
@@ -53,17 +133,32 @@
                 "psnr": [
                     36.72134199652101
                 ],
-                "ms-ssim": [
-                    0.988144131998221
-                ],
                 "bpp": [
                     0.8034328884548612
+                ]
+            }
+        },
+        "1":{
+            "name": "lora_stf",
+            "description": "Inference (ans)",
+            "results": {
+                "psnr": [
+                    36.38780029403912
                 ],
-                "encoding_time": [
-                    0.4011123776435852
+                "bpp": [
+                    0.7625528971354166
+                ]
+            }
+        },
+        "2":{
+            "name": "lora_stf",
+            "description": "Inference (ans)",
+            "results": {
+                "psnr": [
+                    33.66104579115062
                 ],
-                "decoding_time": [
-                    0.6335388620694479
+                "bpp": [
+                    0.5264519585503472
                 ]
             }
         }
