@@ -157,8 +157,8 @@ def train_one_epoch(
             bar.close()
             print(
                 f"Train epoch {epoch}: ["
-                f"{i*len(d)}/{len(train_dataloader.dataset)}"
-                f" ({100. * i / len(train_dataloader):.0f}%)]"
+                f"{(i+1)*len(d)}/{len(train_dataloader.dataset)}"
+                f" ({100. * (i+1) / len(train_dataloader):.0f}%)]"
                 f'\tLoss: {out_criterion["loss"].item():.3f} |'
                 f'\tMSE loss: {out_criterion["mse_loss"].item() * 255 ** 2 / 3:.3f} |'
                 f'\tBpp loss: {out_criterion["bpp_loss"].item():.2f} |'
