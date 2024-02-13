@@ -163,12 +163,12 @@ def train_one_epoch(
         avg_bpp_loss.update(out_criterion["bpp_loss"])
         avg_aux_loss.update(aux_loss)
 
-        if i % 100 == 99:
+        if i % 1000 == 999:
             bar.close()
             print(
                 f"Train epoch {epoch}: ["
                 f"{(i+1)*len(d)}/{len(train_dataloader.dataset)}"
-                f" ({100. * (i+1) / len(train_dataloader):.0f}%)]"
+                f" ({1000. * (i+1) / len(train_dataloader):.0f}%)]"
                 f"\tLoss: {avg_loss.avg:.3f} |"
                 f"\tMSE loss: {avg_mse_loss.avg * 255 ** 2 / 3:.3f} |"
                 f"\tBpp loss: {avg_bpp_loss.avg:.2f} |"
