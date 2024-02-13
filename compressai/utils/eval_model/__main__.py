@@ -164,10 +164,7 @@ def eval_model(
     model.eval()
     device = next(model.parameters()).device
     metrics = defaultdict(float)
-    cnt = 1
     for f in tqdm(filepaths):
-        print(f"{cnt}: {f}")
-        cnt += 1
         _filename = f.split("/")[-1]
 
         x = read_image(f).to(device)
