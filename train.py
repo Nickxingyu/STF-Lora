@@ -156,7 +156,7 @@ def train_one_epoch(
                 f'\tLoss: {out_criterion["loss"].item():.3f} |'
                 f'\tMSE loss: {out_criterion["mse_loss"].item() * 255 ** 2 / 3:.3f} |'
                 f'\tBpp loss: {out_criterion["bpp_loss"].item():.2f} |'
-                # f"\tAux loss: {aux_loss.item():.2f}"
+                f"\tAux loss: {aux_loss.item():.2f}"
             )
 
 
@@ -167,7 +167,7 @@ def test_epoch(epoch, test_dataloader, model, criterion):
     loss = AverageMeter()
     bpp_loss = AverageMeter()
     mse_loss = AverageMeter()
-    # aux_loss = AverageMeter()
+    aux_loss = AverageMeter()
 
     with torch.no_grad():
         for d in test_dataloader:
@@ -175,7 +175,7 @@ def test_epoch(epoch, test_dataloader, model, criterion):
             out_net = model(d)
             out_criterion = criterion(out_net, d)
 
-            # aux_loss.update(model.aux_loss())
+            aux_loss.update(model.aux_loss())
             bpp_loss.update(out_criterion["bpp_loss"])
             loss.update(out_criterion["loss"])
             mse_loss.update(out_criterion["mse_loss"])
@@ -185,13 +185,13 @@ def test_epoch(epoch, test_dataloader, model, criterion):
         f"\tLoss: {loss.avg:.3f} |"
         f"\tMSE loss: {mse_loss.avg * 255 ** 2 / 3:.3f} |"
         f"\tBpp loss: {bpp_loss.avg:.2f} |"
-        # f"\tAux loss: {aux_loss.avg:.2f}\n"
+        f"\tAux loss: {aux_loss.avg:.2f}\n"
     )
     return loss.avg
 
 
-def save_checkpoint(state, is_best, filename):
-    torch.save(state, filename)
+def save_checkpoint(state, is_best, filename, tag: str = ""):
+    torch.save(state, filename[:-8] + (f"_{tag}" if tag != "" else tag) + filename[-8:])
     if is_best:
         shutil.copyfile(filename, filename[:-8] + "_best" + filename[-8:])
 
@@ -200,7 +200,7 @@ def parse_args(argv):
     parser = argparse.ArgumentParser(description="Example training script.")
     parser.add_argument(
         "--lora_r",
-        default=4,
+        default=8,
         type=int,
         help="Lora Rank (default: %(default)s)",
     )
@@ -243,7 +243,10 @@ def parse_args(argv):
         help="Bit-rate distortion parameter (default: %(default)s)",
     )
     parser.add_argument(
-        "--batch-size", type=int, default=16, help="Batch size (default: %(default)s)"
+        "--batch-size",
+        type=int,
+        default=16,
+        help="Batch size (default: %(default)s)",
     )
     parser.add_argument(
         "--test-batch-size",
@@ -266,7 +269,10 @@ def parse_args(argv):
     )
     parser.add_argument("--cuda", action="store_true", help="Use cuda")
     parser.add_argument(
-        "--save", action="store_true", default=True, help="Save model or lora to disk"
+        "--save",
+        action="store_true",
+        default=True,
+        help="Save model or lora to disk",
     )
     parser.add_argument(
         "--save_path",
@@ -275,7 +281,9 @@ def parse_args(argv):
         help="Where to Save model",
     )
     parser.add_argument(
-        "--seed", type=float, help="Set random seed for reproducibility"
+        "--seed",
+        type=float,
+        help="Set random seed for reproducibility",
     )
     parser.add_argument(
         "--clip_max_norm",
@@ -283,8 +291,17 @@ def parse_args(argv):
         type=float,
         help="gradient clipping max norm (default: %(default)s",
     )
-    parser.add_argument("--checkpoint", type=str, help="Path to a checkpoint")
-    parser.add_argument("--lora_checkpoint", type=str, help="Path to a lora checkpoint")
+    parser.add_argument(
+        "--pretrain_ckpt",
+        required=True,
+        type=str,
+        help="Path to a pretrain model checkpoint",
+    )
+    parser.add_argument(
+        "--ckpt",
+        type=str,
+        help="Path to a lora checkpoint",
+    )
     args = parser.parse_args(argv)
     return args
 
@@ -332,12 +349,12 @@ def main(argv):
         pin_memory=(device == "cuda"),
     )
 
-    net = load_checkpoint(args.model, args.checkpoint, strict=False)
+    net = load_checkpoint(args.model, args.pretrain_ckpt, strict=False)
 
-    net = net.to(device)
-
-    if args.cuda and torch.cuda.device_count() > 1:
-        net = CustomDataParallel(net)
+    lora.mark_only_lora_as_trainable(net)
+    for n, p in net.named_parameters():
+        if n.endswith(".quantiles"):
+            p.requires_grad = True
 
     optimizer, aux_optimizer = configure_optimizers(net, args)
     lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(
@@ -346,11 +363,11 @@ def main(argv):
     criterion = RateDistortionLoss(lmbda=args.lmbda)
 
     last_epoch = 0
-    if args.lora_checkpoint:  # load from previous checkpoint
-        print("Loading", args.lora_checkpoint)
-        lora_checkpoint = torch.load(args.lora_checkpoint, map_location=device)
+    if args.ckpt:  # load from previous checkpoint
+        print("Loading", args.ckpt)
+        lora_checkpoint = torch.load(args.ckpt, map_location=device)
 
-        net.load_state_dict(
+        net.load_lora_state(
             lora_checkpoint["state_dict"],
             strict=False,
         )
@@ -358,6 +375,11 @@ def main(argv):
         optimizer.load_state_dict(lora_checkpoint["optimizer"])
         lr_scheduler.load_state_dict(lora_checkpoint["lr_scheduler"])
         aux_optimizer.load_state_dict(lora_checkpoint["aux_optimizer"])
+
+    net = net.to(device)
+
+    if args.cuda and torch.cuda.device_count() > 1:
+        net = CustomDataParallel(net)
 
     best_loss = float("inf")
     for epoch in range(last_epoch, args.epochs):
@@ -383,7 +405,7 @@ def main(argv):
         save_checkpoint(
             {
                 "epoch": epoch,
-                "state_dict": net.state_dict(),
+                "state_dict": lora.lora_state_dict(net, "all"),
                 "loss": loss,
                 "optimizer": optimizer.state_dict(),
                 "lr_scheduler": lr_scheduler.state_dict(),
@@ -391,6 +413,7 @@ def main(argv):
             },
             is_best,
             args.save_path,
+            f"{args.lmbda}_epoch_{epoch}",
         )
 
 

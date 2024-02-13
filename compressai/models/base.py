@@ -60,12 +60,13 @@ class CompressionModel(nn.Module):
             updated |= rv
         return updated
 
-    def load_state_dict(self, state_dict, strict: bool = True):
-        # Dynamically update the entropy bottleneck buffers related to the CDFs
-        update_registered_buffers(
-            self.entropy_bottleneck,
-            "entropy_bottleneck",
-            ["_quantized_cdf", "_offset", "_cdf_length"],
-            state_dict,
-        )
+    def load_state_dict(self, state_dict, strict: bool = True, update=True):
+        if update:
+            # Dynamically update the entropy bottleneck buffers related to the CDFs
+            update_registered_buffers(
+                self.entropy_bottleneck,
+                "entropy_bottleneck",
+                ["_quantized_cdf", "_offset", "_cdf_length"],
+                state_dict,
+            )
         super().load_state_dict(state_dict, strict)

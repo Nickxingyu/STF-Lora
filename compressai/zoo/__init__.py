@@ -13,12 +13,11 @@
 # limitations under the License.
 
 
-from compressai.models import (
-    SymmetricalTransFormerWithLora,
-)
+from compressai.models import SymmetricalTransFormerWithLora, SymmetricalTransFormer
 
 from .pretrained import load_pretrained as load_state_dict
 
 models = {
     "lora_stf": SymmetricalTransFormerWithLora,
+    "stf": SymmetricalTransFormer,
 }

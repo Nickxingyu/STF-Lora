@@ -18,6 +18,7 @@ import argparse
 import json
 import math
 import os
+import shutil
 import sys
 import time
 
@@ -162,7 +163,10 @@ def eval_model(
     model.eval()
     device = next(model.parameters()).device
     metrics = defaultdict(float)
+    cnt = 1
     for f in filepaths:
+        print(f"{cnt}: {f}")
+        cnt += 1
         _filename = f.split("/")[-1]
 
         x = read_image(f).to(device)
@@ -230,6 +234,14 @@ def setup_args():
         help="verbose mode",
     )
     parent_parser.add_argument(
+        "-pp",
+        "--pretrain_path",
+        type=str,
+        required=True,
+        help="pretrain checkpoint path",
+    )
+
+    parent_parser.add_argument(
         "-p",
         "--path",
         dest="paths",
@@ -254,7 +266,6 @@ def main(argv):
 
     runs = args.paths
     opts = (args.architecture,)
-    load_func = load_checkpoint
     log_fmt = "\rEvaluating {run:s}"
 
     results = defaultdict(list)
@@ -262,9 +273,16 @@ def main(argv):
         if args.verbose:
             sys.stderr.write(log_fmt.format(*opts, run=run))
             sys.stderr.flush()
-        model = load_func(*opts, run, False)
+
+        model = load_checkpoint(args.architecture, args.pretrain_path, False)
         if args.cuda and torch.cuda.is_available():
             model = model.to("cuda")
+
+        lora_state = torch.load(run)
+        model.load_lora_state(lora_state)
+
+        for n, p in model.named_parameters():
+            print(n)
 
         model.update(force=True)
 
