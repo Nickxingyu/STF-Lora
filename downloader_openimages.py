@@ -6,7 +6,7 @@ if __name__ == "__main__":
     dataset_train = fiftyone.zoo.load_zoo_dataset(
         "open-images-v6",
         split="train",
-        max_samples=2,
+        max_samples=100,
         label_types=["classifications"],
         dataset_dir="dataset",
     )

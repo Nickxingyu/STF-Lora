@@ -153,7 +153,7 @@ def train_one_epoch(
         aux_loss.backward()
         aux_optimizer.step()
         bar.update(1)
-        if i % 100 == 0:
+        if i % 100 == 99:
             bar.close()
             print(
                 f"Train epoch {epoch}: ["
@@ -164,7 +164,6 @@ def train_one_epoch(
                 f'\tBpp loss: {out_criterion["bpp_loss"].item():.2f} |'
                 f"\tAux loss: {aux_loss.item():.2f}"
             )
-            start_time = time.time()
 
 
 def test_epoch(epoch, test_dataloader, model, criterion):
