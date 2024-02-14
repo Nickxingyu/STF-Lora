@@ -404,7 +404,7 @@ def main(argv):
         net.load_lora_state(lora_checkpoint["state_dict"])
 
         if "fc_state_dict" in lora_checkpoint:
-            net.load_fa_state(lora_checkpoint["fc_state_dict"])
+            net.load_fc_state(lora_checkpoint["fc_state_dict"])
 
         last_epoch = lora_checkpoint["epoch"] + 1
         optimizer.load_state_dict(lora_checkpoint["optimizer"])
