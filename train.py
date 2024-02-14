@@ -224,7 +224,7 @@ def parse_args(argv):
     parser = argparse.ArgumentParser(description="Example training script.")
     parser.add_argument(
         "--lora_r",
-        default=8,
+        default=4,
         type=int,
         help="Lora Rank (default: %(default)s)",
     )
