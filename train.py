@@ -339,6 +339,10 @@ def load_checkpoint(
     return models[arch].from_state_dict(state_dict, strict)
 
 
+def fc_state_dict(net: nn.Module):
+    return {n: p for n, p in net.named_parameters() if n.endswith(".quantiles")}
+
+
 def main(argv):
     args = parse_args(argv)
     print(args)
@@ -397,10 +401,8 @@ def main(argv):
         print("Loading", args.ckpt)
         lora_checkpoint = torch.load(args.ckpt, map_location=device)
 
-        net.load_lora_state(
-            lora_checkpoint["state_dict"],
-            strict=False,
-        )
+        net.load_lora_state(lora_checkpoint["state_dict"])
+        # net.load_fa_state(lora_checkpoint["fc_state_dict"])
         last_epoch = lora_checkpoint["epoch"] + 1
         optimizer.load_state_dict(lora_checkpoint["optimizer"])
         lr_scheduler.load_state_dict(lora_checkpoint["lr_scheduler"])
@@ -431,6 +433,7 @@ def main(argv):
             {
                 "epoch": epoch,
                 "state_dict": lora.lora_state_dict(net, "all"),
+                "fc_state_dict": fc_state_dict(net),
                 "loss": loss,
                 "optimizer": optimizer.state_dict(),
                 "lr_scheduler": lr_scheduler.state_dict(),
