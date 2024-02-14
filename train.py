@@ -391,7 +391,14 @@ def main(argv):
         pin_memory=(device == "cuda"),
     )
 
-    net = load_checkpoint(args.model, args.pretrain_ckpt, strict=False, device=device)
+    net = load_checkpoint(
+        args.model,
+        args.pretrain_ckpt,
+        strict=False,
+        device=device,
+        lora_r=args.lora_r,
+        hyper_lora_r=args.hyper_lora_r,
+    )
 
     lora.mark_only_lora_as_trainable(net)
     for n, p in net.named_parameters():
