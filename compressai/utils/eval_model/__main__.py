@@ -284,6 +284,7 @@ def main(argv):
         model.load_lora_state(lora_ckpt["state_dict"])
 
         if "fc_state_dict" in lora_ckpt:
+            print("Load FC")
             model.load_fc_state(lora_ckpt["fc_state_dict"])
 
         if args.cuda and torch.cuda.is_available():
