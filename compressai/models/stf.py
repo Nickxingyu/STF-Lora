@@ -1134,7 +1134,7 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
         frozen_stages=-1,
         use_checkpoint=False,
         lora_r=4,
-        hyper_lora_r=16,
+        hyper_lora_r=32,
         merge_weights=True,
     ):
         super().__init__(
