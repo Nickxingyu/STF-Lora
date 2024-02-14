@@ -187,18 +187,25 @@ def setup_args():
     parent_parser = argparse.ArgumentParser()
 
     # Common options.
-    parent_parser.add_argument("-d", "--dataset", type=str, help="dataset path")
+    parent_parser.add_argument(
+        "-d",
+        "--dataset",
+        type=str,
+        default="./dataset/test/data/",
+        help="dataset path",
+    )
     parent_parser.add_argument(
         "-r",
         "--recon_path",
         type=str,
-        default="reconstruction",
+        default="./reconstruction/",
         help="where to save recon img",
     )
     parent_parser.add_argument(
         "-a",
         "--architecture",
         type=str,
+        default="lora_stf",
         choices=models.keys(),
         help="model architecture",
         required=True,

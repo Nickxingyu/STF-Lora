@@ -35,6 +35,78 @@
                     0.7994689941406249
                 ]
             }
+        },
+        "3":{
+            "name": "lora_stf",
+            "description": "Inference (ans)",
+            "results": {
+                "psnr": [
+                    36.44949718318217
+                ],
+                "bpp": [
+                    0.7354905870225693
+                ]
+            }
+        },
+        "4":{
+            "name": "lora_stf",
+            "description": "Inference (ans)",
+            "results": {
+                "psnr": [
+                    36.25147552562597
+                ],
+                "bpp": [
+                    0.7111443413628472
+                ]
+            }
+        },
+        "5":{
+            "name": "lora_stf",
+            "description": "Inference (ans)",
+            "results": {
+                "psnr": [
+                    36.23301049447106
+                ],
+                "bpp": [
+                    0.7098219129774307
+                ]
+            }
+        },
+        "6":{
+            "name": "lora_stf",
+            "description": "Inference (ans)",
+            "results": {
+                "psnr": [
+                    36.20720966797624
+                ],
+                "bpp": [
+                    0.7059190538194445
+                ]
+            }
+        },
+        "7":{
+            "name": "lora_stf",
+            "description": "Inference (ans)",
+            "results": {
+                "psnr": [
+                    36.14820222229576
+                ],
+                "bpp": [
+                    0.698849148220486
+                ]
+            }
+        },
+        "8":{
+            "name": "lora_stf",
+            "description": "Inference (ans)",
+            "results": {
+                "psnr": [
+                    36.09748119590238
+                ],
+                "bpp": [
+                    0.6925726996527777
+                ]
+            }
         }
     },
     "6->4":{
@@ -95,6 +167,66 @@
                 ],
                 "bpp": [
                     0.5613878038194445
+                ]
+            }
+        },
+        "5":{
+            "name": "lora_stf",
+            "description": "Inference (ans)",
+            "results": {
+                "psnr": [
+                    34.420209329710424
+                ],
+                "bpp": [
+                    0.5193176269531251
+                ]
+            }
+        },
+        "6":{
+            "name": "lora_stf",
+            "description": "Inference (ans)",
+            "results": {
+                "psnr": [
+                    34.316599647531355
+                ],
+                "bpp": [
+                    0.5072597927517362
+                ]
+            }
+        },
+        "7":{
+            "name": "lora_stf",
+            "description": "Inference (ans)",
+            "results": {
+                "psnr": [
+                    34.372856216901646
+                ],
+                "bpp": [
+                    0.5131327311197916
+                ]
+            }
+        },
+        "8":{
+            "name": "lora_stf",
+            "description": "Inference (ans)",
+            "results": {
+                "psnr": [
+                    34.305882787749916
+                ],
+                "bpp": [
+                    0.5057474772135416
+                ]
+            }
+        },
+        "9":{
+            "name": "lora_stf",
+            "description": "Inference (ans)",
+            "results": {
+                "psnr": [
+                    34.25725318532135
+                ],
+                "bpp": [
+                    0.5003492567274306
                 ]
             }
         }
