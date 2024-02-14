@@ -976,9 +976,9 @@ class SymmetricalTransFormer(CompressionModel):
         super().load_state_dict(state_dict, strict=strict, update=update)
 
     @classmethod
-    def from_state_dict(cls, state_dict, strict: bool = True):
+    def from_state_dict(cls, state_dict, strict: bool = True, lora_r=0, hyper_lora_r=0):
         """Return a new model instance from `state_dict`."""
-        net = cls()
+        net = cls(lora_r=lora_r, hyper_lora_r=hyper_lora_r)
         net.load_state_dict(state_dict, strict)
         return net
 

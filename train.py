@@ -341,12 +341,14 @@ def parse_args(argv):
 
 
 def load_checkpoint(
-    arch: str, checkpoint_path: str, strict=True, device="cpu"
+    arch: str, checkpoint_path: str, strict=True, device="cpu", lora_r=0, hyper_lora_r=0
 ) -> nn.Module:
     state_dict = load_state_dict(
         torch.load(checkpoint_path, map_location=torch.device(device))["state_dict"]
     )
-    return models[arch].from_state_dict(state_dict, strict)
+    return models[arch].from_state_dict(
+        state_dict, strict, lora_r=lora_r, hyper_lora_r=hyper_lora_r
+    )
 
 
 def fc_state_dict(net: nn.Module):
