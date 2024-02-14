@@ -236,12 +236,16 @@ def parse_args(argv):
         help="Model architecture (default: %(default)s)",
     )
     parser.add_argument(
-        "-d", "--dataset", type=str, required=True, help="Training dataset"
+        "-d",
+        "--dataset",
+        type=str,
+        default="./dataset/",
+        help="Training dataset",
     )
     parser.add_argument(
         "-e",
         "--epochs",
-        default=100,
+        default=10,
         type=int,
         help="Number of epochs (default: %(default)s)",
     )
@@ -256,7 +260,7 @@ def parse_args(argv):
         "-n",
         "--num-workers",
         type=int,
-        default=0,
+        default=4,
         help="Dataloaders threads (default: %(default)s)",
     )
     parser.add_argument(
