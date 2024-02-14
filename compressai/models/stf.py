@@ -1440,3 +1440,6 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
 
     def load_lora_state(self, state_dict, strict=False):
         super().load_state_dict(state_dict, strict=strict, update=False)
+
+    def load_fc_state(self, state_dict, strict=False):
+        super().load_state_dict(state_dict, strict, update=False)

@@ -402,7 +402,10 @@ def main(argv):
         lora_checkpoint = torch.load(args.ckpt, map_location=device)
 
         net.load_lora_state(lora_checkpoint["state_dict"])
-        # net.load_fa_state(lora_checkpoint["fc_state_dict"])
+
+        if "fc_state_dict" in lora_checkpoint:
+            net.load_fa_state(lora_checkpoint["fc_state_dict"])
+
         last_epoch = lora_checkpoint["epoch"] + 1
         optimizer.load_state_dict(lora_checkpoint["optimizer"])
         lr_scheduler.load_state_dict(lora_checkpoint["lr_scheduler"])
