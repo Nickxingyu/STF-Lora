@@ -208,7 +208,6 @@ def setup_args():
         default="lora_stf",
         choices=models.keys(),
         help="model architecture",
-        required=True,
     )
     parent_parser.add_argument(
         "-c",
