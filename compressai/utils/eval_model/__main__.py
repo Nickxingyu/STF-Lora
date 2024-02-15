@@ -157,7 +157,7 @@ def load_checkpoint(
     state_dict = load_state_dict(
         torch.load(checkpoint_path, map_location=torch.device("cpu"))["state_dict"]
     )
-    return models[arch].from_state_dict(state_dict, strict)
+    return models[arch].from_state_dict(state_dict, strict, lora_r, hyper_lora_r)
 
 
 def eval_model(
