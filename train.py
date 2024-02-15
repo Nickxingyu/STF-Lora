@@ -212,25 +212,26 @@ def test_epoch(epoch, test_dataloader, model, criterion):
     return loss.avg
 
 
-def save_checkpoint(state, is_best, filename, tag: str = ""):
-    tag_filename = filename[:-8] + (f"_{tag}" if tag != "" else tag) + filename[-8:]
+def save_checkpoint(state, is_best, filename, tag: str = "", epoch=0):
+    filename = filename[:-8] + (f"_{tag}" if tag != "" else tag) + filename[-8:]
+    epoch_filename = filename[:-8] + f"_epoch_{epoch}" + filename[-8:]
     best_filename = filename[:-8] + "_best" + filename[-8:]
-    torch.save(state, tag_filename)
+    torch.save(state, epoch_filename)
     if is_best:
-        shutil.copyfile(tag_filename, best_filename)
+        shutil.copyfile(epoch_filename, best_filename)
 
 
 def parse_args(argv):
     parser = argparse.ArgumentParser(description="Example training script.")
     parser.add_argument(
         "--lora_r",
-        default=4,
+        default=2,
         type=int,
         help="Lora Rank (default: %(default)s)",
     )
     parser.add_argument(
         "--hyper_lora_r",
-        default=16,
+        default=8,
         type=int,
         help="Lora Rank (default: %(default)s)",
     )
@@ -464,7 +465,8 @@ def main(argv):
             },
             is_best,
             args.save_path,
-            f"{args.lmbda}_epoch_{epoch}",
+            f"{args.lmbda}",
+            epoch,
         )
 
 
