@@ -258,13 +258,13 @@ def setup_args():
     )
     parent_parser.add_argument(
         "--lora_r",
-        default=4,
+        default=2,
         type=int,
         help="Lora Rank (default: %(default)s)",
     )
     parent_parser.add_argument(
         "--hyper_lora_r",
-        default=16,
+        default=8,
         type=int,
         help="Lora Rank (default: %(default)s)",
     )
