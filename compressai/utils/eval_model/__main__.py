@@ -151,7 +151,9 @@ def inference_entropy_estimation(model, x):
     }
 
 
-def load_checkpoint(arch: str, checkpoint_path: str, strict=True) -> nn.Module:
+def load_checkpoint(
+    arch: str, checkpoint_path: str, strict=True, lora_r=0, hyper_lora_r=0
+) -> nn.Module:
     state_dict = load_state_dict(
         torch.load(checkpoint_path, map_location=torch.device("cpu"))["state_dict"]
     )
@@ -254,6 +256,19 @@ def setup_args():
         required=True,
         help="checkpoint path",
     )
+    parent_parser.add_argument(
+        "--lora_r",
+        default=4,
+        type=int,
+        help="Lora Rank (default: %(default)s)",
+    )
+    parent_parser.add_argument(
+        "--hyper_lora_r",
+        default=16,
+        type=int,
+        help="Lora Rank (default: %(default)s)",
+    )
+
     return parent_parser
 
 
@@ -278,7 +293,9 @@ def main(argv):
             sys.stderr.write(log_fmt.format(*opts, run=run))
             sys.stderr.flush()
 
-        model = load_checkpoint(args.architecture, args.pretrain_path, False)
+        model = load_checkpoint(
+            args.architecture, args.pretrain_path, False, args.lora_r, args.hyper_lora_r
+        )
 
         lora_ckpt = torch.load(run)
         model.load_lora_state(lora_ckpt["state_dict"])
