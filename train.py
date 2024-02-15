@@ -214,11 +214,10 @@ def test_epoch(epoch, test_dataloader, model, criterion):
 
 def save_checkpoint(state, is_best, filename, tag: str = "", epoch=0):
     filename = filename[:-8] + (f"_{tag}" if tag != "" else tag) + filename[-8:]
-    epoch_filename = filename[:-8] + f"_epoch_{epoch}" + filename[-8:]
     best_filename = filename[:-8] + "_best" + filename[-8:]
-    torch.save(state, epoch_filename)
+    torch.save(state, filename)
     if is_best:
-        shutil.copyfile(epoch_filename, best_filename)
+        shutil.copyfile(filename, best_filename)
 
 
 def parse_args(argv):
@@ -466,7 +465,6 @@ def main(argv):
             is_best,
             args.save_path,
             f"{args.lmbda}",
-            epoch,
         )
 
 
