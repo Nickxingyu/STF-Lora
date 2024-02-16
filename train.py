@@ -140,9 +140,6 @@ def train_one_epoch(
     steps_to_show = 1000
 
     for i, d in enumerate(tqdm(train_dataloader)):
-        if i % steps_to_show == 0:
-            bar = tqdm(total=steps_to_show)
-
         d = d.to(device)
 
         optimizer.zero_grad()
@@ -158,7 +155,6 @@ def train_one_epoch(
         aux_loss = model.aux_loss()
         aux_loss.backward()
         aux_optimizer.step()
-        bar.update(1)
 
         avg_loss.update(out_criterion["loss"])
         avg_mse_loss.update(out_criterion["mse_loss"])
@@ -166,7 +162,6 @@ def train_one_epoch(
         avg_aux_loss.update(aux_loss)
 
         if i % steps_to_show == steps_to_show - 1:
-            bar.close()
             print(
                 f"Train epoch {epoch}: ["
                 f"{(i+1)*len(d)}/{len(train_dataloader.dataset)}"
