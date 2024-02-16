@@ -298,6 +298,7 @@ def main(argv):
         )
 
         lora_ckpt = torch.load(run)
+        epoch = lora_ckpt["epoch"]
         model.load_lora_state(lora_ckpt["state_dict"])
 
         if "fc_state_dict" in lora_ckpt:
@@ -327,6 +328,7 @@ def main(argv):
         "entropy estimation" if args.entropy_estimation else args.entropy_coder
     )
     output = {
+        "epoch": epoch,
         "name": args.architecture,
         "description": f"Inference ({description})",
         "results": results,
