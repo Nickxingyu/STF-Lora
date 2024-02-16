@@ -293,12 +293,14 @@ def main(argv):
             sys.stderr.write(log_fmt.format(*opts, run=run))
             sys.stderr.flush()
 
-        model = load_checkpoint(
-            args.architecture, args.pretrain_path, False, args.lora_r, args.hyper_lora_r
-        )
-
         lora_ckpt = torch.load(run)
         epoch = lora_ckpt["epoch"]
+        lora_r = lora_ckpt["lora_r"]
+        hyper_lora_r = lora_ckpt["hyper_lora_r"]
+        model = load_checkpoint(
+            args.architecture, args.pretrain_path, False, lora_r, hyper_lora_r
+        )
+
         model.load_lora_state(lora_ckpt["state_dict"])
 
         if "fc_state_dict" in lora_ckpt:
