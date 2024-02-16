@@ -452,7 +452,7 @@ def main(argv):
 
     optimizer, aux_optimizer = configure_optimizers(net, args)
     lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, "min", factor=0.8, patience=2
+        optimizer, "min", factor=0.5, patience=2
     )
     criterion = RateDistortionLoss(lmbda=args.lmbda)
 
