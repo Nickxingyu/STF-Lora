@@ -211,7 +211,7 @@ class WindowAttentionWithLora(WindowAttention):
         proj_drop=0.0,
         lora_r=0,
         merge_weights=True,
-        enable_lora=[True, False, True],
+        enable_lora=[True, True, True],
     ):
         super().__init__(
             dim=dim,
