@@ -218,6 +218,11 @@ def save_checkpoint(state, is_best, filename, tag: str = "", epoch=0):
 def parse_args(argv):
     parser = argparse.ArgumentParser(description="Example training script.")
     parser.add_argument(
+        "--lora",
+        action="store_true",
+        help="Train Lora",
+    )
+    parser.add_argument(
         "--lora_r",
         default=2,
         type=int,
@@ -335,7 +340,7 @@ def parse_args(argv):
     return args
 
 
-def load_checkpoint(
+def load_backbone(
     arch: str, checkpoint_path: str, strict=True, device="cpu", lora_r=0, hyper_lora_r=0
 ) -> nn.Module:
     state_dict = load_state_dict(
@@ -350,13 +355,7 @@ def fc_state_dict(net: nn.Module):
     return {n: p for n, p in net.named_parameters() if n.endswith(".quantiles")}
 
 
-def main(argv):
-    args = parse_args(argv)
-    print(args)
-    if args.seed is not None:
-        torch.manual_seed(args.seed)
-        random.seed(args.seed)
-
+def NewDataLoader(args, device="cpu"):
     train_transforms = transforms.Compose(
         [transforms.RandomCrop(args.patch_size), transforms.ToTensor()]
     )
@@ -367,8 +366,6 @@ def main(argv):
 
     train_dataset = ImageFolder(args.dataset, split="train", transform=train_transforms)
     test_dataset = ImageFolder(args.dataset, split="test", transform=test_transforms)
-
-    device = "cuda" if args.cuda and torch.cuda.is_available() else "cpu"
 
     train_dataloader = DataLoader(
         train_dataset,
@@ -385,8 +382,11 @@ def main(argv):
         shuffle=False,
         pin_memory=(device == "cuda"),
     )
+    return train_dataloader, test_dataloader
 
-    net = load_checkpoint(
+
+def NewLoraModel(args, device) -> nn.Module:
+    net = load_backbone(
         args.model,
         args.pretrain_ckpt,
         strict=False,
@@ -394,15 +394,61 @@ def main(argv):
         lora_r=args.lora_r,
         hyper_lora_r=args.hyper_lora_r,
     )
-
     lora.mark_only_lora_as_trainable(net)
     for n, p in net.named_parameters():
         if n.endswith(".quantiles"):
             p.requires_grad = True
 
     net = net.to(device)
+
     if args.cuda and torch.cuda.device_count() > 1:
         net = CustomDataParallel(net)
+
+    return net
+
+
+def load_ckpt(args, net, device, optimizer, aux_optimizer, lr_scheduler) -> (int, int):
+    print("Loading", args.ckpt)
+    checkpoint = torch.load(args.ckpt, map_location=device)
+
+    net.load_state_dict(checkpoint["state_dict"])
+    last_epoch = checkpoint["epoch"] + 1
+    best_loss = checkpoint["best_loss"]
+    optimizer.load_state_dict(checkpoint["optimizer"])
+    lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
+    aux_optimizer.load_state_dict(checkpoint["aux_optimizer"])
+
+    return last_epoch, best_loss
+
+
+def load_lora_ckpt(
+    args, net, device, optimizer, aux_optimizer, lr_scheduler
+) -> (int, int):
+    print("Loading", args.ckpt)
+    lora_checkpoint = torch.load(args.ckpt, map_location=device)
+
+    net.load_lora_state(lora_checkpoint["state_dict"])
+    net.load_fc_state(lora_checkpoint["fc_state_dict"])
+    last_epoch = lora_checkpoint["epoch"] + 1
+    best_loss = lora_checkpoint["best_loss"]
+    optimizer.load_state_dict(lora_checkpoint["optimizer"])
+    lr_scheduler.load_state_dict(lora_checkpoint["lr_scheduler"])
+    aux_optimizer.load_state_dict(lora_checkpoint["aux_optimizer"])
+
+    return last_epoch, best_loss
+
+
+def main(argv):
+    args = parse_args(argv)
+    print(args)
+    if args.seed is not None:
+        torch.manual_seed(args.seed)
+        random.seed(args.seed)
+
+    device = "cuda" if args.cuda and torch.cuda.is_available() else "cpu"
+
+    train_dataloader, test_dataloader = NewDataLoader(args, device)
+    net = NewLoraModel(args, device) if args.lora else models[args.model]()
 
     optimizer, aux_optimizer = configure_optimizers(net, args)
     lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(
@@ -411,22 +457,13 @@ def main(argv):
     criterion = RateDistortionLoss(lmbda=args.lmbda)
 
     last_epoch = 0
-    if args.ckpt:  # load from previous checkpoint
-        print("Loading", args.ckpt)
-        lora_checkpoint = torch.load(args.ckpt, map_location=device)
-
-        net.load_lora_state(lora_checkpoint["state_dict"])
-
-        if "fc_state_dict" in lora_checkpoint:
-            print("Load FC")
-            net.load_fc_state(lora_checkpoint["fc_state_dict"])
-
-        last_epoch = lora_checkpoint["epoch"] + 1
-        optimizer.load_state_dict(lora_checkpoint["optimizer"])
-        lr_scheduler.load_state_dict(lora_checkpoint["lr_scheduler"])
-        aux_optimizer.load_state_dict(lora_checkpoint["aux_optimizer"])
-
     best_loss = float("inf")
+    if args.ckpt:
+        load_fn = load_lora_ckpt if args.lora else load_ckpt
+        last_epoch, best_loss = load_fn(
+            args, net, optimizer, aux_optimizer, lr_scheduler
+        )
+
     for epoch in range(last_epoch, args.epochs):
         print(f"Learning rate: {optimizer.param_groups[0]['lr']}")
         train_one_epoch(
@@ -447,18 +484,32 @@ def main(argv):
         if not args.save:
             continue
 
-        save_checkpoint(
-            {
+        if args.lora:
+            ckpt_info = {
                 "epoch": epoch,
                 "lora_r": args.lora_r,
                 "hyper_lora_r": args.hyper_lora_r,
                 "state_dict": lora.lora_state_dict(net, "all"),
                 "fc_state_dict": fc_state_dict(net),
                 "loss": loss,
+                "best_loss": best_loss,
                 "optimizer": optimizer.state_dict(),
                 "lr_scheduler": lr_scheduler.state_dict(),
                 "aux_optimizer": aux_optimizer.state_dict(),
-            },
+            }
+        else:
+            ckpt_info = {
+                "epoch": epoch,
+                "state_dict": net.state_dict(),
+                "loss": loss,
+                "best_loss": best_loss,
+                "optimizer": optimizer.state_dict(),
+                "lr_scheduler": lr_scheduler.state_dict(),
+                "aux_optimizer": aux_optimizer.state_dict(),
+            }
+
+        save_checkpoint(
+            ckpt_info,
             is_best,
             args.save_path,
             f"{args.lmbda}",

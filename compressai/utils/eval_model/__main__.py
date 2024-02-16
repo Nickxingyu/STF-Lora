@@ -160,6 +160,20 @@ def load_checkpoint(
     return models[arch].from_state_dict(state_dict, strict, lora_r, hyper_lora_r)
 
 
+def load_lora_ckpt(args, ckpt) -> nn.Module:
+    print("Load Lora")
+    lora_ckpt = torch.load(ckpt)
+    lora_r = lora_ckpt["lora_r"]
+    hyper_lora_r = lora_ckpt["hyper_lora_r"]
+    model = load_checkpoint(
+        args.architecture, args.backbone_path, False, lora_r, hyper_lora_r
+    )
+
+    model.load_lora_state(lora_ckpt["state_dict"])
+    model.load_fc_state(lora_ckpt["fc_state_dict"])
+    return model
+
+
 def eval_model(
     model, filepaths, entropy_estimation=False, half=False, recon_path="reconstruction"
 ):
@@ -189,6 +203,11 @@ def setup_args():
     parent_parser = argparse.ArgumentParser()
 
     # Common options.
+    parent_parser.add_argument(
+        "--lora",
+        action="store_true",
+        help="Train Lora",
+    )
     parent_parser.add_argument(
         "-d",
         "--dataset",
@@ -240,11 +259,10 @@ def setup_args():
         help="verbose mode",
     )
     parent_parser.add_argument(
-        "-pp",
-        "--pretrain_path",
+        "-bp",
+        "--backbone_path",
         type=str,
-        required=True,
-        help="pretrain checkpoint path",
+        help="backbone path",
     )
 
     parent_parser.add_argument(
@@ -256,18 +274,6 @@ def setup_args():
         required=True,
         help="checkpoint path",
     )
-    parent_parser.add_argument(
-        "--lora_r",
-        default=2,
-        type=int,
-        help="Lora Rank (default: %(default)s)",
-    )
-    parent_parser.add_argument(
-        "--hyper_lora_r",
-        default=8,
-        type=int,
-        help="Lora Rank (default: %(default)s)",
-    )
 
     return parent_parser
 
@@ -275,6 +281,8 @@ def setup_args():
 def main(argv):
     parser = setup_args()
     args = parser.parse_args(argv)
+
+    device = "cuda" if args.cuda and torch.cuda.is_available() else "cpu"
 
     filepaths = collect_images(args.dataset)
     if len(filepaths) == 0:
@@ -293,22 +301,12 @@ def main(argv):
             sys.stderr.write(log_fmt.format(*opts, run=run))
             sys.stderr.flush()
 
-        lora_ckpt = torch.load(run)
-        epoch = lora_ckpt["epoch"]
-        lora_r = lora_ckpt["lora_r"]
-        hyper_lora_r = lora_ckpt["hyper_lora_r"]
-        model = load_checkpoint(
-            args.architecture, args.pretrain_path, False, lora_r, hyper_lora_r
-        )
+        if args.lora:
+            model = load_lora_ckpt(args, run)
+        else:
+            model = load_checkpoint(args.architecture, run)
 
-        model.load_lora_state(lora_ckpt["state_dict"])
-
-        if "fc_state_dict" in lora_ckpt:
-            print("Load FC")
-            model.load_fc_state(lora_ckpt["fc_state_dict"])
-
-        if args.cuda and torch.cuda.is_available():
-            model = model.to("cuda")
+        model = model.to(device)
 
         model.update(force=True)
 
@@ -330,7 +328,6 @@ def main(argv):
         "entropy estimation" if args.entropy_estimation else args.entropy_coder
     )
     output = {
-        "epoch": epoch,
         "name": args.architecture,
         "description": f"Inference ({description})",
         "results": results,
