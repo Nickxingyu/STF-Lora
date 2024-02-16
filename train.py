@@ -139,7 +139,7 @@ def train_one_epoch(
 
     steps_to_show = 1000
 
-    for i, d in enumerate(train_dataloader):
+    for i, d in enumerate(tqdm(train_dataloader)):
         if i % steps_to_show == 0:
             bar = tqdm(total=steps_to_show)
 
