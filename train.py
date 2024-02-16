@@ -411,7 +411,7 @@ def main(argv):
 
     optimizer, aux_optimizer = configure_optimizers(net, args)
     lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, "min", factor=0.3, patience=4
+        optimizer, "min", factor=0.3, patience=2
     )
     criterion = RateDistortionLoss(lmbda=args.lmbda)
 
@@ -455,6 +455,8 @@ def main(argv):
         save_checkpoint(
             {
                 "epoch": epoch,
+                "lora_r": args.lora_r,
+                "hyper_lora_r": args.hyper_lora_r,
                 "state_dict": lora.lora_state_dict(net, "all"),
                 "fc_state_dict": fc_state_dict(net),
                 "loss": loss,
