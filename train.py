@@ -224,13 +224,13 @@ def parse_args(argv):
     )
     parser.add_argument(
         "--lora_r",
-        default=2,
+        default=4,
         type=int,
         help="Lora Rank (default: %(default)s)",
     )
     parser.add_argument(
         "--hyper_lora_r",
-        default=8,
+        default=4,
         type=int,
         help="Lora Rank (default: %(default)s)",
     )
