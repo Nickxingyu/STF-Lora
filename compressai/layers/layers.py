@@ -16,7 +16,7 @@
 import torch
 import torch.nn as nn
 import loralib as lora
-from .win_attention import WinBasedAttention
+from .win_attention import WinBasedAttention, WinBasedAttentionLora
 
 __all__ = [
     "conv3x3",
@@ -26,6 +26,7 @@ __all__ = [
     "lora_subpel_conv3x3",
     "lora_conv1x1",
     "Win_noShift_Attention",
+    "Win_noShift_Attention_Lora",
 ]
 
 
@@ -142,3 +143,65 @@ class Win_noShift_Attention(nn.Module):
         out = a * torch.sigmoid(b)
         out += identity
         return out
+
+
+class Win_noShift_Attention_Lora(Win_noShift_Attention):
+
+    def __init__(
+        self,
+        dim,
+        num_heads=8,
+        window_size=8,
+        shift_size=0,
+        lora_r=0,
+        merge_weights=True,
+        enable_lora=[True, True, True],
+    ):
+        super().__init__(
+            dim=dim,
+            num_heads=num_heads,
+            window_size=window_size,
+            shift_size=shift_size,
+        )
+        N = dim
+
+        class ResidualUnit(nn.Module):
+            """Simple residual unit."""
+
+            def __init__(self):
+                super().__init__()
+                self.conv = nn.Sequential(
+                    lora_conv1x1(N, N // 2, lora_r=lora_r, merge_weights=merge_weights),
+                    nn.GELU(),
+                    lora_conv3x3(
+                        N // 2, N // 2, lora_r=lora_r, merge_weights=merge_weights
+                    ),
+                    nn.GELU(),
+                    lora_conv1x1(N // 2, N, lora_r=lora_r, merge_weights=merge_weights),
+                )
+                self.relu = nn.GELU()
+
+            def forward(self, x):
+                identity = x
+                out = self.conv(x)
+                out += identity
+                out = self.relu(out)
+                return out
+
+        self.conv_a = nn.Sequential(ResidualUnit(), ResidualUnit(), ResidualUnit())
+
+        self.conv_b = nn.Sequential(
+            WinBasedAttentionLora(
+                dim=dim,
+                num_heads=num_heads,
+                window_size=window_size,
+                shift_size=shift_size,
+                lora_r=lora_r,
+                merge_weights=merge_weights,
+                enable_lora=enable_lora,
+            ),
+            ResidualUnit(),
+            ResidualUnit(),
+            ResidualUnit(),
+            lora_conv1x1(N, N, lora_r=lora_r, merge_weights=merge_weights),
+        )
