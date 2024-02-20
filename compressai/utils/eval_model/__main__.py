@@ -151,13 +151,11 @@ def inference_entropy_estimation(model, x):
     }
 
 
-def load_checkpoint(
-    arch: str, checkpoint_path: str, strict=True, lora_r=0, hyper_lora_r=0
-) -> nn.Module:
+def load_checkpoint(arch: str, checkpoint_path: str, strict=True) -> nn.Module:
     state_dict = load_state_dict(
         torch.load(checkpoint_path, map_location=torch.device("cpu"))["state_dict"]
     )
-    return models[arch].from_state_dict(state_dict, strict, lora_r, hyper_lora_r)
+    return models[arch].from_state_dict(state_dict, strict)
 
 
 def load_lora_ckpt(args, ckpt) -> nn.Module:
@@ -165,8 +163,12 @@ def load_lora_ckpt(args, ckpt) -> nn.Module:
     lora_ckpt = torch.load(ckpt)
     lora_r = lora_ckpt["lora_r"]
     hyper_lora_r = lora_ckpt["hyper_lora_r"]
-    model = load_checkpoint(
-        args.architecture, args.backbone_path, False, lora_r, hyper_lora_r
+
+    state_dict = load_state_dict(
+        torch.load(args.backbone_path, map_location=torch.device("cpu"))["state_dict"]
+    )
+    model = models[args.architecture].from_state_dict(
+        state_dict, False, lora_r, hyper_lora_r
     )
 
     model.load_lora_state(lora_ckpt["state_dict"])
