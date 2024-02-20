@@ -327,14 +327,13 @@ def parse_args(argv):
     )
     parser.add_argument(
         "--pretrain_ckpt",
-        required=True,
         type=str,
         help="Path to a pretrain model checkpoint",
     )
     parser.add_argument(
         "--ckpt",
         type=str,
-        help="Path to a lora checkpoint",
+        help="Path to checkpoint",
     )
     args = parser.parse_args(argv)
     return args
@@ -411,14 +410,16 @@ def load_ckpt(args, net, device, optimizer, aux_optimizer, lr_scheduler) -> (int
     print("Loading", args.ckpt)
     checkpoint = torch.load(args.ckpt, map_location=device)
 
-    net.load_state_dict(checkpoint["state_dict"])
+    state_dict = load_state_dict(checkpoint["state_dict"])
+
+    models[args.model].from_state_dict(state_dict)
     last_epoch = checkpoint["epoch"] + 1
-    best_loss = checkpoint["best_loss"]
+    # best_loss = checkpoint["best_loss"]
     optimizer.load_state_dict(checkpoint["optimizer"])
     lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
     aux_optimizer.load_state_dict(checkpoint["aux_optimizer"])
 
-    return last_epoch, best_loss
+    return last_epoch
 
 
 def load_lora_ckpt(
@@ -430,12 +431,12 @@ def load_lora_ckpt(
     net.load_lora_state(lora_checkpoint["state_dict"])
     net.load_fc_state(lora_checkpoint["fc_state_dict"])
     last_epoch = lora_checkpoint["epoch"] + 1
-    best_loss = lora_checkpoint["best_loss"]
+    # best_loss = lora_checkpoint["best_loss"]
     optimizer.load_state_dict(lora_checkpoint["optimizer"])
     lr_scheduler.load_state_dict(lora_checkpoint["lr_scheduler"])
     aux_optimizer.load_state_dict(lora_checkpoint["aux_optimizer"])
 
-    return last_epoch, best_loss
+    return last_epoch
 
 
 def main(argv):
@@ -460,9 +461,7 @@ def main(argv):
     best_loss = float("inf")
     if args.ckpt:
         load_fn = load_lora_ckpt if args.lora else load_ckpt
-        last_epoch, best_loss = load_fn(
-            args, net, optimizer, aux_optimizer, lr_scheduler
-        )
+        load_fn(args, net, device, optimizer, aux_optimizer, lr_scheduler)
 
     for epoch in range(last_epoch, args.epochs):
         print(f"Learning rate: {optimizer.param_groups[0]['lr']}")
