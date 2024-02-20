@@ -412,7 +412,7 @@ def load_ckpt(args, net, device, optimizer, aux_optimizer, lr_scheduler) -> (int
 
     state_dict = load_state_dict(checkpoint["state_dict"])
 
-    models[args.model].from_state_dict(state_dict)
+    net.from_state_dict(state_dict)
     last_epoch = checkpoint["epoch"] + 1
     # best_loss = checkpoint["best_loss"]
     # optimizer.load_state_dict(checkpoint["optimizer"])
