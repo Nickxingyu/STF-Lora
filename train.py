@@ -415,9 +415,9 @@ def load_ckpt(args, net, device, optimizer, aux_optimizer, lr_scheduler) -> (int
     models[args.model].from_state_dict(state_dict)
     last_epoch = checkpoint["epoch"] + 1
     # best_loss = checkpoint["best_loss"]
-    optimizer.load_state_dict(checkpoint["optimizer"])
-    lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
-    aux_optimizer.load_state_dict(checkpoint["aux_optimizer"])
+    # optimizer.load_state_dict(checkpoint["optimizer"])
+    # lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
+    # aux_optimizer.load_state_dict(checkpoint["aux_optimizer"])
 
     return last_epoch
 
@@ -462,6 +462,8 @@ def main(argv):
     if args.ckpt:
         load_fn = load_lora_ckpt if args.lora else load_ckpt
         load_fn(args, net, device, optimizer, aux_optimizer, lr_scheduler)
+
+    net = net.to(device)
 
     for epoch in range(last_epoch, args.epochs):
         print(f"Learning rate: {optimizer.param_groups[0]['lr']}")
