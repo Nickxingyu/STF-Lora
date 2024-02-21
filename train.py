@@ -354,7 +354,7 @@ def fc_state_dict(net: nn.Module):
     return {n: p for n, p in net.named_parameters() if n.endswith(".quantiles")}
 
 
-def NewDataLoader(args, device="cpu"):
+def NewDataSet(args):
     train_transforms = transforms.Compose(
         [transforms.RandomCrop(args.patch_size), transforms.ToTensor()]
     )
@@ -366,6 +366,10 @@ def NewDataLoader(args, device="cpu"):
     train_dataset = ImageFolder(args.dataset, split="train", transform=train_transforms)
     test_dataset = ImageFolder(args.dataset, split="test", transform=test_transforms)
 
+    return train_dataset, test_dataset
+
+
+def NewDataLoader(args, train_dataset, test_dataset, device="cpu"):
     train_dataloader = DataLoader(
         train_dataset,
         batch_size=args.batch_size,
@@ -448,7 +452,11 @@ def main(argv):
 
     device = "cuda" if args.cuda and torch.cuda.is_available() else "cpu"
 
-    train_dataloader, test_dataloader = NewDataLoader(args, device)
+    train_dataset, test_dataset = NewDataSet(args)
+    train_dataloader, test_dataloader = NewDataLoader(
+        args, train_dataset, test_dataset, device
+    )
+
     net = NewLoraModel(args, device) if args.lora else models[args.model]()
 
     optimizer, aux_optimizer = configure_optimizers(net, args)

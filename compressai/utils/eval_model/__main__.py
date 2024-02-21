@@ -171,8 +171,11 @@ def load_lora_ckpt(args, ckpt) -> nn.Module:
         state_dict, False, lora_r, hyper_lora_r
     )
 
+    start = time.time()
     model.load_lora_state(lora_ckpt["state_dict"])
     model.load_fc_state(lora_ckpt["fc_state_dict"])
+    end = time.time()
+    print(f"Load Lora: {end-start}")
     return model
 
 
@@ -304,6 +307,7 @@ def main(argv):
             sys.stderr.flush()
 
         if args.lora:
+
             model = load_lora_ckpt(args, run)
         else:
             model = load_checkpoint(args.architecture, run)
