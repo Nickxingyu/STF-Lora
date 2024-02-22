@@ -176,6 +176,7 @@ def load_lora_ckpt(args, ckpt) -> nn.Module:
     model.load_fc_state(lora_ckpt["fc_state_dict"])
     end = time.time()
     print(f"Load Lora: {end-start}")
+    print(f"lora_r: {lora_ckpt['lora_r']}, hyper_lora_r:{'hyper_lora_r'}")
     print(f"epoch: {lora_ckpt['epoch']}")
     return model
 
