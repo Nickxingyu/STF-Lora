@@ -251,7 +251,7 @@ def parse_args(argv):
     parser.add_argument(
         "--num-data",
         type=int,
-        default=300000,
+        default=32000,
         help="Number of data (default: %(default)s)",
     )
     parser.add_argument(
