@@ -249,6 +249,12 @@ def parse_args(argv):
         help="Training dataset",
     )
     parser.add_argument(
+        "--num-data",
+        type=int,
+        default=300000,
+        help="Number of data (default: %(default)s)",
+    )
+    parser.add_argument(
         "-e",
         "--epochs",
         default=10,
@@ -363,7 +369,9 @@ def NewDataSet(args):
         [transforms.CenterCrop(args.patch_size), transforms.ToTensor()]
     )
 
-    train_dataset = ImageFolder(args.dataset, split="train", transform=train_transforms)
+    train_dataset = ImageFolder(
+        args.dataset, length=args.num_data, split="train", transform=train_transforms
+    )
     test_dataset = ImageFolder(args.dataset, split="test", transform=test_transforms)
 
     return train_dataset, test_dataset

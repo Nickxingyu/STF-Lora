@@ -39,13 +39,14 @@ class ImageFolder(Dataset):
         split (string): split mode ('train' or 'val')
     """
 
-    def __init__(self, root, transform=None, split="train"):
+    def __init__(self, root, length=300000, transform=None, split="train"):
         splitdir = Path(root) / split / "data"
 
         if not splitdir.is_dir():
             raise RuntimeError(f'Invalid directory "{root}"')
 
         self.samples = [f for f in splitdir.iterdir() if f.is_file()]
+        self.samples = self.samples[: min(length, len(self.samples))]
 
         self.transform = transform
 
