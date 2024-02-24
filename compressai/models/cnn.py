@@ -717,7 +717,7 @@ class ChannelMask(nn.Module):
 class MaskedWACNN(WACNN):
     def __init__(self, N=192, M=320, target_idx=-1, **kwargs):
         super().__init__(N, M, **kwargs)
-        self.channel_mask = ChannelMask(M, target_idx)
+        self.channel_mask = ChannelMask(N, target_idx)
         self.g_a = nn.Sequential(
             conv(3, N, kernel_size=5, stride=2),
             GDN(N),
@@ -725,10 +725,10 @@ class MaskedWACNN(WACNN):
             GDN(N),
             Win_noShift_Attention(dim=N, num_heads=8, window_size=8, shift_size=4),
             conv(N, N, kernel_size=5, stride=2),
+            self.channel_mask,
             GDN(N),
             conv(N, M, kernel_size=5, stride=2),
             Win_noShift_Attention(dim=M, num_heads=8, window_size=4, shift_size=2),
-            self.channel_mask,
         )
         self.g_s = nn.Sequential(
             Win_noShift_Attention(dim=M, num_heads=8, window_size=4, shift_size=2),
