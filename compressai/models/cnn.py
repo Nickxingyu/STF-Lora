@@ -742,7 +742,6 @@ class MaskedWACNN(WACNN):
         )
 
         self.h_a = nn.Sequential(
-            self.channel_mask,
             conv3x3(320, 320),
             nn.GELU(),
             conv3x3(320, 288),
@@ -764,6 +763,7 @@ class MaskedWACNN(WACNN):
             subpel_conv3x3(256, 288, 2),
             nn.GELU(),
             conv3x3(288, 320),
+            self.channel_mask,
         )
 
         self.h_scale_s = nn.Sequential(
@@ -776,6 +776,7 @@ class MaskedWACNN(WACNN):
             subpel_conv3x3(256, 288, 2),
             nn.GELU(),
             conv3x3(288, 320),
+            self.channel_mask,
         )
 
     def set_mask_idx(self, idx: int):
