@@ -727,8 +727,8 @@ class MaskedWACNN(WACNN):
             conv(N, N, kernel_size=5, stride=2),
             GDN(N),
             conv(N, M, kernel_size=5, stride=2),
-            self.channel_mask,
             Win_noShift_Attention(dim=M, num_heads=8, window_size=4, shift_size=2),
+            self.channel_mask,
         )
         self.g_s = nn.Sequential(
             Win_noShift_Attention(dim=M, num_heads=8, window_size=4, shift_size=2),
