@@ -18,6 +18,8 @@ from pytorch_msssim import ms_ssim
 from torchvision import transforms
 import matplotlib.pyplot as plt
 
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
 IMG_EXTENSIONS = (
     ".jpg",
     ".jpeg",
@@ -124,6 +126,7 @@ filepaths = collect_images(file_dir)
 compressai.set_entropy_coder("ans")
 
 net.update(force=True)
+net = net.to(device)
 
 psnr_list = []
 bpp_list = []
