@@ -141,7 +141,7 @@ for i in tqdm(range(net.get_num_channels())):
 y_min = min(psnr_list)
 y_max = max(psnr_list)
 
-bar1 = plt.bar(range(len(psnr_list)), psnr_list)
+bar1 = plt.bar(range(len(bpp_list)), bpp_list)
 plt.title("Channel Influence")
 plt.xlabel("Channel index")
 plt.ylabel("PSNR ( dB )")
@@ -150,7 +150,7 @@ plt.savefig("channel_influence.png")
 
 bar1.remove()
 
-bar2 = plt.bar(range(len(psnr_list)), sorted(psnr_list, reverse=True))
+bar2 = plt.bar(range(len(bpp_list)), sorted(bpp_list, reverse=True))
 plt.title("Sorted Channel Influence")
 plt.xlabel("Rank")
 plt.ylabel("PSNR ( dB )")
