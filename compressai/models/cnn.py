@@ -386,7 +386,7 @@ class WACNNWithLora(WACNN):
                 N,
                 kernel_size=5,
                 stride=2,
-                lora_r=0,
+                lora_r=32,
                 merge_weights=merge_weights,
             ),
             GDN(N),
@@ -413,7 +413,7 @@ class WACNNWithLora(WACNN):
                 M,
                 kernel_size=5,
                 stride=2,
-                lora_r=32,
+                lora_r=0,
                 merge_weights=merge_weights,
             ),
             Win_noShift_Attention_Lora(
@@ -421,7 +421,7 @@ class WACNNWithLora(WACNN):
                 num_heads=8,
                 window_size=4,
                 shift_size=2,
-                lora_r=32,
+                lora_r=0,
                 merge_weights=merge_weights,
                 enable_lora=enable_lora,
             ),
@@ -432,7 +432,7 @@ class WACNNWithLora(WACNN):
                 num_heads=8,
                 window_size=4,
                 shift_size=2,
-                lora_r=32,
+                lora_r=0,
                 merge_weights=merge_weights,
                 enable_lora=enable_lora,
             ),
@@ -441,7 +441,7 @@ class WACNNWithLora(WACNN):
                 N,
                 kernel_size=5,
                 stride=2,
-                lora_r=32,
+                lora_r=0,
                 merge_weights=merge_weights,
             ),
             GDN(N, inverse=True),
@@ -468,7 +468,7 @@ class WACNNWithLora(WACNN):
                 N,
                 kernel_size=5,
                 stride=2,
-                lora_r=0,
+                lora_r=32,
                 merge_weights=merge_weights,
             ),
             GDN(N, inverse=True),
@@ -511,7 +511,7 @@ class WACNNWithLora(WACNN):
                 256, 288, 2, lora_r=hyper_lora_r, merge_weights=merge_weights
             ),
             nn.GELU(),
-            lora_conv3x3(288, 320, lora_r=16, merge_weights=merge_weights),
+            lora_conv3x3(288, 320, lora_r=hyper_lora_r, merge_weights=merge_weights),
         )
 
         self.h_scale_s = nn.Sequential(
@@ -527,7 +527,7 @@ class WACNNWithLora(WACNN):
                 256, 288, 2, lora_r=hyper_lora_r, merge_weights=merge_weights
             ),
             nn.GELU(),
-            lora_conv3x3(288, 320, lora_r=16, merge_weights=merge_weights),
+            lora_conv3x3(288, 320, lora_r=hyper_lora_r, merge_weights=merge_weights),
         )
         self.cc_mean_transforms = nn.ModuleList(
             nn.Sequential(
