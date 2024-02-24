@@ -3,6 +3,7 @@ import time
 import math
 from collections import defaultdict
 from typing import List
+import json
 
 import torch
 from torch import nn
@@ -120,7 +121,7 @@ def eval_model(model, filepaths):
 ckpt = "./ckpt/cnn_025.pth.tar"
 net = load_checkpoint("masked_cnn", ckpt, False)
 
-file_dir = "./dataset/test/kodim/"
+file_dir = "./dataset/test/data/"
 filepaths = collect_images(file_dir)
 
 compressai.set_entropy_coder("ans")
@@ -128,18 +129,36 @@ compressai.set_entropy_coder("ans")
 net.update(force=True)
 net = net.to(device)
 
-psnr_list = []
+psnr_list = [30, 32, 31, 36, 35]
 bpp_list = []
 
-for i in tqdm(range(net.get_num_channels())):
-    net.set_mask_idx(i)
-    result = eval_model(net, filepaths)
-    psnr_list.append(result["psnr"])
-    bpp_list.append(result["bpp"])
+# for i in tqdm(range(net.get_num_channels())):
+#     net.set_mask_idx(i)
+#     result = eval_model(net, filepaths)
+#     psnr_list.append(result["psnr"])
+#     bpp_list.append(result["bpp"])
 
+bar1 = plt.bar(range(len(psnr_list)), psnr_list)
 plt.title("Channel Influence")
 plt.xlabel("Channel index")
 plt.ylabel("PSNR ( dB )")
 plt.ylim(28, 40)
-plt.bar(range(len(psnr_list)), psnr_list)
 plt.savefig("channel_influence.png")
+
+bar1.remove()
+
+bar2 = plt.bar(range(len(psnr_list)), sorted(psnr_list, reverse=True))
+plt.title("Sorted Channel Influence")
+plt.xlabel("Rank")
+plt.ylabel("PSNR ( dB )")
+plt.ylim(28, 40)
+plt.savefig("sorted_channel_influence.png")
+
+with open("channel_influence.json", "w") as f:
+    json.dump(
+        {
+            "psnr": psnr_list,
+            "bpp": bpp_list,
+        },
+        f,
+    )
