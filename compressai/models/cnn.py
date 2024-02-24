@@ -764,7 +764,6 @@ class MaskedWACNN(WACNN):
             subpel_conv3x3(256, 288, 2),
             nn.GELU(),
             conv3x3(288, 320),
-            self.channel_mask,
         )
 
         self.h_scale_s = nn.Sequential(
