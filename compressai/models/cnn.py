@@ -720,9 +720,9 @@ class MaskedWACNN(WACNN):
         self.channel_mask = ChannelMask(N, target_idx)
         self.g_a = nn.Sequential(
             conv(3, N, kernel_size=5, stride=2),
+            self.channel_mask,
             GDN(N),
             conv(N, N, kernel_size=5, stride=2),
-            self.channel_mask,
             GDN(N),
             Win_noShift_Attention(dim=N, num_heads=8, window_size=8, shift_size=4),
             conv(N, N, kernel_size=5, stride=2),
