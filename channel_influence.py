@@ -154,7 +154,7 @@ bar2 = plt.bar(range(len(psnr_list)), sorted(psnr_list, reverse=True))
 plt.title("Sorted Channel Influence")
 plt.xlabel("Rank")
 plt.ylabel("PSNR ( dB )")
-plt.ylim(y_min, y_max)
+plt.ylim(int(y_min) - 1, int(y_max) + 1)
 plt.savefig("sorted_channel_influence.png")
 
 with open("channel_influence.json", "w") as f:
