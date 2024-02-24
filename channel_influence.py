@@ -145,7 +145,7 @@ bar1 = plt.bar(range(len(bpp_list)), bpp_list)
 plt.title("Channel Influence")
 plt.xlabel("Channel index")
 plt.ylabel("PSNR ( dB )")
-plt.ylim(y_min, y_max)
+plt.ylim(y_min - 0.1, y_max + 0.1)
 plt.savefig("channel_influence.png")
 
 bar1.remove()
@@ -154,7 +154,7 @@ bar2 = plt.bar(range(len(bpp_list)), sorted(bpp_list, reverse=True))
 plt.title("Sorted Channel Influence")
 plt.xlabel("Rank")
 plt.ylabel("PSNR ( dB )")
-plt.ylim(max(int(y_min) - 1, 0), int(y_max) + 1)
+plt.ylim(max(y_min - 0.1, 0), y_max + 0.1)
 plt.savefig("sorted_channel_influence.png")
 
 with open("channel_influence.json", "w") as f:
