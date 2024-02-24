@@ -691,3 +691,59 @@ class WACNNWithLora(WACNN):
 
     def load_fc_state(self, state_dict, strict=False):
         super().load_state_dict(state_dict, strict, update=False)
+
+
+class ChannelMask(nn.Module):
+    def __init__(
+        self, num_channels: int = 192, target_idx: int = -1, *args, **kwargs
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        self.target_idx = target_idx
+        self.num_channels = num_channels
+
+    def set_target_idx(self, idx: int):
+        self.target_idx = idx
+
+    def forward(self, x):
+        mask = torch.ones_like(x)
+        _, C, _, _ = mask.shape
+        if self.target_idx >= C or self.target_idx < 0:
+            return x
+
+        mask[:, self.target_idx] = torch.zeros_like(mask[:, self.target_idx])
+        return x * mask
+
+
+class MaskedWACNN(WACNN):
+    def __init__(self, N=192, M=320, target_idx=-1, **kwargs):
+        super().__init__(N, M, **kwargs)
+        self.channel_mask = ChannelMask(M, target_idx)
+        self.g_a = nn.Sequential(
+            conv(3, N, kernel_size=5, stride=2),
+            GDN(N),
+            conv(N, N, kernel_size=5, stride=2),
+            GDN(N),
+            Win_noShift_Attention(dim=N, num_heads=8, window_size=8, shift_size=4),
+            conv(N, N, kernel_size=5, stride=2),
+            GDN(N),
+            conv(N, M, kernel_size=5, stride=2),
+            Win_noShift_Attention(dim=M, num_heads=8, window_size=4, shift_size=2),
+            self.channel_mask,
+        )
+        self.g_s = nn.Sequential(
+            Win_noShift_Attention(dim=M, num_heads=8, window_size=4, shift_size=2),
+            deconv(M, N, kernel_size=5, stride=2),
+            GDN(N, inverse=True),
+            deconv(N, N, kernel_size=5, stride=2),
+            GDN(N, inverse=True),
+            Win_noShift_Attention(dim=N, num_heads=8, window_size=8, shift_size=4),
+            deconv(N, N, kernel_size=5, stride=2),
+            GDN(N, inverse=True),
+            deconv(N, 3, kernel_size=5, stride=2),
+        )
+
+    def set_mask_idx(self, idx: int):
+        self.channel_mask.set_target_idx(idx)
+
+    def get_num_channels(self):
+        return self.channel_mask.num_channels

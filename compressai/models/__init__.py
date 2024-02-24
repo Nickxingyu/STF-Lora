@@ -14,4 +14,4 @@
 
 
 from .stf import SymmetricalTransFormer, SymmetricalTransFormerWithLora
-from .cnn import WACNN, WACNNWithLora
+from .cnn import WACNN, WACNNWithLora, MaskedWACNN
