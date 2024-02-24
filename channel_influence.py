@@ -121,7 +121,7 @@ def eval_model(model, filepaths):
 ckpt = "./ckpt/cnn_025.pth.tar"
 net = load_checkpoint("masked_cnn", ckpt, False)
 
-file_dir = "./dataset/test/data/"
+file_dir = "./dataset/test/kodim/"
 filepaths = collect_images(file_dir)
 
 compressai.set_entropy_coder("ans")
