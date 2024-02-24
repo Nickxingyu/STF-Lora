@@ -743,13 +743,13 @@ class MaskedWACNN(WACNN):
 
         self.h_a = nn.Sequential(
             conv3x3(320, 320),
-            self.channel_mask,
             nn.GELU(),
             conv3x3(320, 288),
             nn.GELU(),
             conv3x3(288, 256, stride=2),
             nn.GELU(),
             conv3x3(256, 224),
+            self.channel_mask,
             nn.GELU(),
             conv3x3(224, 192, stride=2),
         )
