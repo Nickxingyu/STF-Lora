@@ -131,7 +131,7 @@ net = net.to(device)
 psnr_list = []
 bpp_list = []
 
-for i in tqdm(range(32)):
+for i in tqdm(range(net.get_num_channels())):
     net.set_mask_idx(i)
     result = eval_model(net, filepaths)
     psnr_list.append(result["psnr"])
