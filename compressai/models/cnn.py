@@ -717,10 +717,9 @@ class ChannelMask(nn.Module):
 class MaskedWACNN(WACNN):
     def __init__(self, N=192, M=320, target_idx=-1, **kwargs):
         super().__init__(N, M, **kwargs)
-        self.channel_mask = ChannelMask(N, target_idx)
+        self.channel_mask = ChannelMask(320, target_idx)
         self.g_a = nn.Sequential(
             conv(3, N, kernel_size=5, stride=2),
-            self.channel_mask,
             GDN(N),
             conv(N, N, kernel_size=5, stride=2),
             GDN(N),
@@ -740,6 +739,43 @@ class MaskedWACNN(WACNN):
             deconv(N, N, kernel_size=5, stride=2),
             GDN(N, inverse=True),
             deconv(N, 3, kernel_size=5, stride=2),
+        )
+
+        self.h_a = nn.Sequential(
+            conv3x3(320, 320),
+            self.channel_mask,
+            nn.GELU(),
+            conv3x3(320, 288),
+            nn.GELU(),
+            conv3x3(288, 256, stride=2),
+            nn.GELU(),
+            conv3x3(256, 224),
+            nn.GELU(),
+            conv3x3(224, 192, stride=2),
+        )
+
+        self.h_mean_s = nn.Sequential(
+            conv3x3(192, 192),
+            nn.GELU(),
+            subpel_conv3x3(192, 224, 2),
+            nn.GELU(),
+            conv3x3(224, 256),
+            nn.GELU(),
+            subpel_conv3x3(256, 288, 2),
+            nn.GELU(),
+            conv3x3(288, 320),
+        )
+
+        self.h_scale_s = nn.Sequential(
+            conv3x3(192, 192),
+            nn.GELU(),
+            subpel_conv3x3(192, 224, 2),
+            nn.GELU(),
+            conv3x3(224, 256),
+            nn.GELU(),
+            subpel_conv3x3(256, 288, 2),
+            nn.GELU(),
+            conv3x3(288, 320),
         )
 
     def set_mask_idx(self, idx: int):
