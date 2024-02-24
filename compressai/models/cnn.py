@@ -717,7 +717,7 @@ class ChannelMask(nn.Module):
 class MaskedWACNN(WACNN):
     def __init__(self, N=192, M=320, target_idx=-1, **kwargs):
         super().__init__(N, M, **kwargs)
-        self.channel_mask = ChannelMask(224, target_idx)
+        self.channel_mask = ChannelMask(192, target_idx)
         self.g_a = nn.Sequential(
             conv(3, N, kernel_size=5, stride=2),
             GDN(N),
@@ -749,9 +749,9 @@ class MaskedWACNN(WACNN):
             conv3x3(288, 256, stride=2),
             nn.GELU(),
             conv3x3(256, 224),
-            self.channel_mask,
             nn.GELU(),
             conv3x3(224, 192, stride=2),
+            self.channel_mask,
         )
 
         self.h_mean_s = nn.Sequential(
