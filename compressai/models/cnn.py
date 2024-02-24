@@ -377,7 +377,7 @@ class WACNNWithLora(WACNN):
                 N,
                 kernel_size=5,
                 stride=2,
-                lora_r=2,
+                lora_r=0,
                 merge_weights=merge_weights,
             ),
             GDN(N),
@@ -727,6 +727,7 @@ class MaskedWACNN(WACNN):
             conv(N, N, kernel_size=5, stride=2),
             GDN(N),
             conv(N, M, kernel_size=5, stride=2),
+            self.channel_mask,
             Win_noShift_Attention(dim=M, num_heads=8, window_size=4, shift_size=2),
         )
         self.g_s = nn.Sequential(
@@ -776,7 +777,6 @@ class MaskedWACNN(WACNN):
             subpel_conv3x3(256, 288, 2),
             nn.GELU(),
             conv3x3(288, 320),
-            self.channel_mask,
         )
 
     def set_mask_idx(self, idx: int):
