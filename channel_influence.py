@@ -105,7 +105,7 @@ def eval_model(model, filepaths):
     model.eval()
     device = next(model.parameters()).device
     metrics = defaultdict(float)
-    for f in tqdm(filepaths):
+    for f in filepaths:
         x = read_image(f).to(device)
         rv = inference(model, x)
         for k, v in rv.items():
@@ -131,7 +131,7 @@ net = net.to(device)
 psnr_list = []
 bpp_list = []
 
-for i in range(32):
+for i in tqdm(range(32)):
     net.set_mask_idx(i)
     result = eval_model(net, filepaths)
     psnr_list.append(result["psnr"])
@@ -140,5 +140,6 @@ for i in range(32):
 plt.title("Channel Influence")
 plt.xlabel("Channel index")
 plt.ylabel("PSNR ( dB )")
+plt.ylim(28, 40)
 plt.bar(range(len(psnr_list)), psnr_list)
 plt.savefig("channel_influence.png")
