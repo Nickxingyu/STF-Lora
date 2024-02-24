@@ -129,14 +129,14 @@ compressai.set_entropy_coder("ans")
 net.update(force=True)
 net = net.to(device)
 
-psnr_list = [30, 32, 31, 36, 35]
+psnr_list = []
 bpp_list = []
 
-# for i in tqdm(range(net.get_num_channels())):
-#     net.set_mask_idx(i)
-#     result = eval_model(net, filepaths)
-#     psnr_list.append(result["psnr"])
-#     bpp_list.append(result["bpp"])
+for i in tqdm(range(net.get_num_channels())):
+    net.set_mask_idx(i)
+    result = eval_model(net, filepaths)
+    psnr_list.append(result["psnr"])
+    bpp_list.append(result["bpp"])
 
 bar1 = plt.bar(range(len(psnr_list)), psnr_list)
 plt.title("Channel Influence")
