@@ -532,6 +532,8 @@ def main(argv):
             f"{args.lmbda}",
         )
 
+    del net
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])
