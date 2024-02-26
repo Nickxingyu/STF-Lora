@@ -160,6 +160,7 @@ def train_one_epoch(
         avg_mse_loss.update(out_criterion["mse_loss"])
         avg_bpp_loss.update(out_criterion["bpp_loss"])
         avg_aux_loss.update(aux_loss)
+        d.to("cpu")
 
         if i % steps_to_show == steps_to_show - 1:
             print(
@@ -418,7 +419,9 @@ def NewLoraModel(args, device) -> nn.Module:
     return net
 
 
-def load_ckpt(args, net, device, optimizer, aux_optimizer, lr_scheduler) -> (int, int):
+def load_ckpt(
+    args, net, device, optimizer, aux_optimizer, lr_scheduler
+) -> tuple[int, int]:
     print("Loading", args.ckpt)
     checkpoint = torch.load(args.ckpt, map_location=device)
 
@@ -436,7 +439,7 @@ def load_ckpt(args, net, device, optimizer, aux_optimizer, lr_scheduler) -> (int
 
 def load_lora_ckpt(
     args, net, device, optimizer, aux_optimizer, lr_scheduler
-) -> (int, int):
+) -> tuple[int, int]:
     print("Loading", args.ckpt)
     lora_checkpoint = torch.load(args.ckpt, map_location=device)
 
