@@ -122,7 +122,7 @@ def inference(model, x, filename, recon_path):
     bpp = sum(len(s[0]) for s in out_enc["strings"]) * 8.0 / num_pixels
     return {
         "psnr": psnr(x, out_dec["x_hat"]),
-        # "ms-ssim": ms_ssim(x, out_dec["x_hat"], data_range=1.0).item(),
+        "ms-ssim": ms_ssim(x, out_dec["x_hat"], data_range=1.0).item(),
         "bpp": bpp,
         # "encoding_time": enc_time,
         # "decoding_time": dec_time,
