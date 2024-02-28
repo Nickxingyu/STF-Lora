@@ -443,6 +443,18 @@ class PatchMerging(nn.Module):
         return x
 
 
+class PatchMergingWithLoRA(PatchMerging):
+    def __init__(self, dim, norm_layer=nn.LayerNorm, lora_r=1, merge_weights=True):
+        super().__init__(dim=dim, norm_layer=norm_layer)
+        self.reduction = lora.Linear(
+            4 * dim,
+            2 * dim,
+            bias=False,
+            r=lora_r,
+            merge_weights=merge_weights,
+        )
+
+
 class PatchSplit(nn.Module):
     """Patch Split Layer
     Args:
@@ -467,6 +479,24 @@ class PatchSplit(nn.Module):
         x = self.shuffle(x)  # B, C//2 ,2H, 2W
         x = x.permute(0, 2, 3, 1).contiguous().view(B, 4 * L, -1)
         return x
+
+
+class PatchSplitWithLoRA(PatchSplit):
+    def __init__(
+        self,
+        dim,
+        norm_layer=nn.LayerNorm,
+        lora_r=1,
+        merge_weights=True,
+    ):
+        super().__init__(dim=dim, norm_layer=norm_layer)
+        self.reduction = lora.Linear(
+            dim,
+            dim * 2,
+            bias=False,
+            r=lora_r,
+            merge_weights=merge_weights,
+        )
 
 
 class BasicLayer(nn.Module):
@@ -633,6 +663,16 @@ class BasicLayerWithLora(BasicLayer):
             ]
         )
 
+        if downsample is not None:
+            self.downsample = downsample(
+                dim=dim,
+                norm_layer=norm_layer,
+                lora_r=lora_r,
+                merge_weights=merge_weights,
+            )
+        else:
+            self.downsample = None
+
 
 class PatchEmbed(nn.Module):
     def __init__(self, patch_size=4, in_chans=3, embed_dim=96, norm_layer=None):
@@ -668,6 +708,32 @@ class PatchEmbed(nn.Module):
             x = x.transpose(1, 2).view(-1, self.embed_dim, Wh, Ww)
 
         return x
+
+
+class PatchEmbedWithLoRA(PatchEmbed):
+    def __init__(
+        self,
+        patch_size=4,
+        in_chans=3,
+        embed_dim=96,
+        norm_layer=None,
+        lora_r=1,
+        merge_weights=True,
+    ):
+        super().__init__(
+            patch_size=patch_size,
+            in_chans=in_chans,
+            embed_dim=embed_dim,
+            norm_layer=norm_layer,
+        )
+        self.proj = lora.Conv2d(
+            in_chans,
+            embed_dim,
+            kernel_size=patch_size,
+            stride=patch_size,
+            r=lora_r,
+            merge_weights=merge_weights,
+        )
 
 
 class SymmetricalTransFormer(CompressionModel):
@@ -1166,6 +1232,15 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
         self.num_slices = num_slices
         self.max_support_slices = num_slices // 2
 
+        self.patch_embed = PatchEmbedWithLoRA(
+            patch_size=patch_size,
+            in_chans=in_chans,
+            embed_dim=embed_dim,
+            norm_layer=norm_layer if self.patch_norm else None,
+            lora_r=lora_r,
+            merge_weights=merge_weights,
+        )
+
         # stochastic depth
         dpr = [
             x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))
@@ -1186,7 +1261,9 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
                 attn_drop=attn_drop_rate,
                 drop_path=dpr[sum(depths[:i_layer]) : sum(depths[: i_layer + 1])],
                 norm_layer=norm_layer,
-                downsample=PatchMerging if (i_layer < self.num_layers - 1) else None,
+                downsample=(
+                    PatchMergingWithLoRA if (i_layer < self.num_layers - 1) else None
+                ),
                 use_checkpoint=use_checkpoint,
                 inverse=False,
                 lora_r=lora_r,
@@ -1210,7 +1287,9 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
                 attn_drop=attn_drop_rate,
                 drop_path=dpr[sum(depths[:i_layer]) : sum(depths[: i_layer + 1])],
                 norm_layer=norm_layer,
-                downsample=PatchSplit if (i_layer < self.num_layers - 1) else None,
+                downsample=(
+                    PatchSplitWithLoRA if (i_layer < self.num_layers - 1) else None
+                ),
                 use_checkpoint=use_checkpoint,
                 inverse=True,
                 lora_r=lora_r,
@@ -1323,7 +1402,7 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
                     64,
                     stride=1,
                     kernel_size=3,
-                    lora_r=hyper_lora_r,
+                    lora_r=hyper_lora_r if hyper_lora_r < 16 else 16,
                     merge_weights=merge_weights,
                 ),
                 nn.GELU(),
@@ -1332,7 +1411,7 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
                     32,
                     stride=1,
                     kernel_size=3,
-                    lora_r=hyper_lora_r,
+                    lora_r=hyper_lora_r if hyper_lora_r < 8 else 8,
                     merge_weights=merge_weights,
                 ),
             )
@@ -1372,7 +1451,7 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
                     64,
                     stride=1,
                     kernel_size=3,
-                    lora_r=hyper_lora_r,
+                    lora_r=hyper_lora_r if hyper_lora_r < 16 else 16,
                     merge_weights=merge_weights,
                 ),
                 nn.GELU(),
@@ -1381,7 +1460,7 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
                     32,
                     stride=1,
                     kernel_size=3,
-                    lora_r=hyper_lora_r,
+                    lora_r=hyper_lora_r if hyper_lora_r < 8 else 8,
                     merge_weights=merge_weights,
                 ),
             )
@@ -1421,7 +1500,7 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
                     64,
                     stride=1,
                     kernel_size=3,
-                    lora_r=hyper_lora_r,
+                    lora_r=hyper_lora_r if hyper_lora_r < 16 else 16,
                     merge_weights=merge_weights,
                 ),
                 nn.GELU(),
@@ -1430,7 +1509,7 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
                     32,
                     stride=1,
                     kernel_size=3,
-                    lora_r=hyper_lora_r,
+                    lora_r=hyper_lora_r if hyper_lora_r < 8 else 8,
                     merge_weights=merge_weights,
                 ),
             )

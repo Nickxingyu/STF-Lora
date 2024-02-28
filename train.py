@@ -534,9 +534,6 @@ def main(argv):
             f"{args.lmbda}",
         )
 
-    del net
-    torch.cuda.empty_cache()
-
 
 if __name__ == "__main__":
     main(sys.argv[1:])
