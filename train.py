@@ -137,7 +137,7 @@ def train_one_epoch(
     avg_bpp_loss = AverageMeter()
     avg_aux_loss = AverageMeter()
 
-    steps_to_show = 1000
+    steps_to_show = 100
 
     for i, d in enumerate(tqdm(train_dataloader)):
         d = d.to(device)
