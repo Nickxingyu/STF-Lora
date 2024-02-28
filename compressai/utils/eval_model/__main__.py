@@ -174,6 +174,7 @@ def load_lora_ckpt(args, ckpt) -> nn.Module:
 
     start = time.time()
     model.load_lora_state(lora_ckpt["state_dict"])
+    model.eval()
     # model.load_fc_state(lora_ckpt["fc_state_dict"])
     end = time.time()
     print(f"Load Lora: {end-start}")
