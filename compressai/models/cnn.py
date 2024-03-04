@@ -377,7 +377,7 @@ class WACNNWithLora(WACNN):
                 N,
                 kernel_size=5,
                 stride=2,
-                lora_r=0,
+                lora_r=lora_r if lora_r < 2 else 2,
                 merge_weights=merge_weights,
             ),
             GDN(N),
