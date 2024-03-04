@@ -413,7 +413,7 @@ class WACNNWithLora(WACNN):
                 M,
                 kernel_size=5,
                 stride=2,
-                lora_r=lora_r,
+                lora_r=1,
                 merge_weights=merge_weights,
             ),
             Win_noShift_Attention_Lora(
@@ -421,7 +421,7 @@ class WACNNWithLora(WACNN):
                 num_heads=8,
                 window_size=4,
                 shift_size=2,
-                lora_r=lora_r,
+                lora_r=1,
                 merge_weights=merge_weights,
                 enable_lora=enable_lora,
             ),
