@@ -160,16 +160,17 @@ def load_checkpoint(arch: str, checkpoint_path: str, strict=True) -> nn.Module:
 
 
 def load_lora_ckpt(args, ckpt) -> nn.Module:
-    print("Load Lora")
+    print("Load LoRA")
     lora_ckpt = torch.load(ckpt)
     lora_r = lora_ckpt["lora_r"]
     hyper_lora_r = lora_ckpt["hyper_lora_r"]
+    merge_weights = args.merge_weights
 
     state_dict = load_state_dict(
         torch.load(args.backbone_path, map_location=torch.device("cpu"))["state_dict"]
     )
     model = models[args.architecture].from_state_dict(
-        state_dict, False, lora_r, hyper_lora_r
+        state_dict, False, lora_r, hyper_lora_r, merge_weights
     )
 
     start = time.time()
@@ -213,9 +214,13 @@ def setup_args():
 
     # Common options.
     parent_parser.add_argument(
+        "--merge_weights", action="store_true", help="Merge LoRA"
+    )
+
+    parent_parser.add_argument(
         "--lora",
         action="store_true",
-        help="Train Lora",
+        help="Train LoRA",
     )
     parent_parser.add_argument(
         "-d",
@@ -311,7 +316,6 @@ def main(argv):
             sys.stderr.flush()
 
         if args.lora:
-
             model = load_lora_ckpt(args, run)
         else:
             model = load_checkpoint(args.architecture, run)
