@@ -13,5 +13,5 @@
 # limitations under the License.
 
 
-from .stf import SymmetricalTransFormer, SymmetricalTransFormerWithLora
+from .stf import SymmetricalTransFormer, SymmetricalTransFormerWithLoRA
 from .cnn import WACNN, WACNNWithLora, MaskedWACNN

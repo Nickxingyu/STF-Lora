@@ -14,7 +14,7 @@
 
 
 from compressai.models import (
-    SymmetricalTransFormerWithLora,
+    SymmetricalTransFormerWithLoRA,
     SymmetricalTransFormer,
     WACNNWithLora,
     WACNN,
@@ -24,7 +24,7 @@ from compressai.models import (
 from .pretrained import load_pretrained as load_state_dict
 
 models = {
-    "lora_stf": SymmetricalTransFormerWithLora,
+    "lora_stf": SymmetricalTransFormerWithLoRA,
     "stf": SymmetricalTransFormer,
     "lora_cnn": WACNNWithLora,
     "cnn": WACNN,

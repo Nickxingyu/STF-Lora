@@ -49,7 +49,7 @@ class Mlp(nn.Module):
         return x
 
 
-class MlpWithLora(Mlp):
+class MlpWithLoRA(Mlp):
     def __init__(
         self,
         in_features,
@@ -65,6 +65,10 @@ class MlpWithLora(Mlp):
             out_features,
             **kwargs,
         )
+
+        if lora_r < 1:
+            return
+
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
         self.fc1 = lora.Linear(
@@ -199,7 +203,7 @@ class WindowAttention(nn.Module):
         return x
 
 
-class WindowAttentionWithLora(WindowAttention):
+class WindowAttentionWithLoRA(WindowAttention):
     def __init__(
         self,
         dim,
@@ -222,6 +226,9 @@ class WindowAttentionWithLora(WindowAttention):
             attn_drop=attn_drop,
             proj_drop=proj_drop,
         )
+
+        if lora_r < 1:
+            return
 
         self.qkv = lora.MergedLinear(
             dim,
@@ -353,7 +360,7 @@ class SwinTransformerBlock(nn.Module):
         return x
 
 
-class SwinTransformerBlockWithLora(SwinTransformerBlock):
+class SwinTransformerBlockWithLoRA(SwinTransformerBlock):
     def __init__(
         self,
         dim,
@@ -381,7 +388,8 @@ class SwinTransformerBlockWithLora(SwinTransformerBlock):
             act_layer=act_layer,
             **kwargs,
         )
-        self.attn = WindowAttentionWithLora(
+
+        self.attn = WindowAttentionWithLoRA(
             dim,
             window_size=to_2tuple(self.window_size),
             num_heads=num_heads,
@@ -394,7 +402,7 @@ class SwinTransformerBlockWithLora(SwinTransformerBlock):
         )
 
         mlp_hidden_dim = int(dim * mlp_ratio)
-        self.mlp = MlpWithLora(
+        self.mlp = MlpWithLoRA(
             in_features=dim,
             hidden_features=mlp_hidden_dim,
             act_layer=act_layer,
@@ -446,6 +454,9 @@ class PatchMerging(nn.Module):
 class PatchMergingWithLoRA(PatchMerging):
     def __init__(self, dim, norm_layer=nn.LayerNorm, lora_r=1, merge_weights=True):
         super().__init__(dim=dim, norm_layer=norm_layer)
+        if lora_r < 1:
+            return
+
         self.reduction = lora.Linear(
             4 * dim,
             2 * dim,
@@ -490,6 +501,9 @@ class PatchSplitWithLoRA(PatchSplit):
         merge_weights=True,
     ):
         super().__init__(dim=dim, norm_layer=norm_layer)
+        if lora_r < 1:
+            return
+
         self.reduction = lora.Linear(
             dim,
             dim * 2,
@@ -602,7 +616,7 @@ class BasicLayer(nn.Module):
             return x, H, W
 
 
-class BasicLayerWithLora(BasicLayer):
+class BasicLayerWithLoRA(BasicLayer):
     def __init__(
         self,
         dim,
@@ -641,7 +655,7 @@ class BasicLayerWithLora(BasicLayer):
         # build blocks
         self.blocks = nn.ModuleList(
             [
-                SwinTransformerBlockWithLora(
+                SwinTransformerBlockWithLoRA(
                     dim=dim,
                     num_heads=num_heads,
                     window_size=window_size,
@@ -726,6 +740,9 @@ class PatchEmbedWithLoRA(PatchEmbed):
             embed_dim=embed_dim,
             norm_layer=norm_layer,
         )
+        if lora_r < 1:
+            return
+
         self.proj = lora.Conv2d(
             in_chans,
             embed_dim,
@@ -1178,7 +1195,7 @@ class SymmetricalTransFormer(CompressionModel):
         return {"x_hat": x_hat}
 
 
-class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
+class SymmetricalTransFormerWithLoRA(SymmetricalTransFormer):
     def __init__(
         self,
         pretrain_img_size=256,
@@ -1249,7 +1266,7 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
         # build layers
         self.layers = nn.ModuleList()
         for i_layer in range(self.num_layers):
-            layer = BasicLayerWithLora(
+            layer = BasicLayerWithLoRA(
                 dim=int(embed_dim * 2**i_layer),
                 depth=depths[i_layer],
                 num_heads=num_heads[i_layer],
@@ -1275,7 +1292,7 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
         num_heads = num_heads[::-1]
         self.syn_layers = nn.ModuleList()
         for i_layer in range(self.num_layers):
-            layer = BasicLayerWithLora(
+            layer = BasicLayerWithLoRA(
                 dim=int(embed_dim * 2 ** (3 - i_layer)),
                 depth=depths[i_layer],
                 num_heads=num_heads[i_layer],
