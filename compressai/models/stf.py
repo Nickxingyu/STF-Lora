@@ -1518,9 +1518,16 @@ class SymmetricalTransFormerWithLora(SymmetricalTransFormer):
         self._freeze_stages()
 
     @classmethod
-    def from_state_dict(cls, state_dict, strict: bool = True, lora_r=0, hyper_lora_r=0):
+    def from_state_dict(
+        cls,
+        state_dict,
+        strict: bool = True,
+        lora_r=0,
+        hyper_lora_r=0,
+        merge_weights=True,
+    ):
         """Return a new model instance from `state_dict`."""
-        net = cls(lora_r=lora_r, hyper_lora_r=hyper_lora_r)
+        net = cls(lora_r=lora_r, hyper_lora_r=hyper_lora_r, merge_weights=merge_weights)
         net.load_state_dict(state_dict, strict)
         return net
 
