@@ -125,8 +125,8 @@ def inference(model, x, filename, recon_path):
         "ms-ssim": -10
         * math.log10(1 - ms_ssim(x, out_dec["x_hat"], data_range=1.0).item()),
         "bpp": bpp,
-        # "encoding_time": enc_time,
-        # "decoding_time": dec_time,
+        "encoding_time": enc_time,
+        "decoding_time": dec_time,
     }
 
 
