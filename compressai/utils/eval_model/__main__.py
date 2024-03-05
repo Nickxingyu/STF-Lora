@@ -175,10 +175,12 @@ def load_lora_ckpt(args, ckpt) -> nn.Module:
 
     start = time.time()
     model.load_lora_state(lora_ckpt["state_dict"])
+    model.load_fc_state(lora_ckpt["fc_state_dict"])
+    load_time = time.time() - start
+    start = time.time()
     model.eval()
-    # model.load_fc_state(lora_ckpt["fc_state_dict"])
-    end = time.time()
-    print(f"Load Lora: {end-start}")
+    merge_time = time.time() - start
+    print(f"Load LoRA: {load_time}, Merge LoRA: {merge_time}")
     print(f"lora_r: {lora_ckpt['lora_r']}, hyper_lora_r:{lora_ckpt['hyper_lora_r']}")
     print(f"epoch: {lora_ckpt['epoch']}")
     return model
