@@ -677,16 +677,6 @@ class BasicLayerWithLoRA(BasicLayer):
             ]
         )
 
-        if downsample is not None:
-            self.downsample = downsample(
-                dim=dim,
-                norm_layer=norm_layer,
-                lora_r=lora_r,
-                merge_weights=merge_weights,
-            )
-        else:
-            self.downsample = None
-
 
 class PatchEmbed(nn.Module):
     def __init__(self, patch_size=4, in_chans=3, embed_dim=96, norm_layer=None):
@@ -1249,13 +1239,11 @@ class SymmetricalTransFormerWithLoRA(SymmetricalTransFormer):
         self.num_slices = num_slices
         self.max_support_slices = num_slices // 2
 
-        self.patch_embed = PatchEmbedWithLoRA(
+        self.patch_embed = PatchEmbed(
             patch_size=patch_size,
             in_chans=in_chans,
             embed_dim=embed_dim,
             norm_layer=norm_layer if self.patch_norm else None,
-            lora_r=lora_r,
-            merge_weights=merge_weights,
         )
 
         # stochastic depth
@@ -1278,9 +1266,7 @@ class SymmetricalTransFormerWithLoRA(SymmetricalTransFormer):
                 attn_drop=attn_drop_rate,
                 drop_path=dpr[sum(depths[:i_layer]) : sum(depths[: i_layer + 1])],
                 norm_layer=norm_layer,
-                downsample=(
-                    PatchMergingWithLoRA if (i_layer < self.num_layers - 1) else None
-                ),
+                downsample=(PatchMerging if (i_layer < self.num_layers - 1) else None),
                 use_checkpoint=use_checkpoint,
                 inverse=False,
                 lora_r=lora_r,
@@ -1304,9 +1290,7 @@ class SymmetricalTransFormerWithLoRA(SymmetricalTransFormer):
                 attn_drop=attn_drop_rate,
                 drop_path=dpr[sum(depths[:i_layer]) : sum(depths[: i_layer + 1])],
                 norm_layer=norm_layer,
-                downsample=(
-                    PatchSplitWithLoRA if (i_layer < self.num_layers - 1) else None
-                ),
+                downsample=(PatchSplit if (i_layer < self.num_layers - 1) else None),
                 use_checkpoint=use_checkpoint,
                 inverse=True,
                 lora_r=lora_r,
@@ -1315,24 +1299,20 @@ class SymmetricalTransFormerWithLoRA(SymmetricalTransFormer):
             self.syn_layers.append(layer)
 
         self.end_conv = nn.Sequential(
-            lora.Conv2d(
+            nn.Conv2d(
                 embed_dim,
                 embed_dim * patch_size**2,
                 kernel_size=5,
                 stride=1,
                 padding=2,
-                r=lora_r,
-                merge_weights=merge_weights,
             ),
             nn.PixelShuffle(patch_size),
-            lora.Conv2d(
+            nn.Conv2d(
                 embed_dim,
                 3,
                 kernel_size=3,
                 stride=1,
                 padding=1,
-                r=lora_r,
-                merge_weights=merge_weights,
             ),
         )
 
